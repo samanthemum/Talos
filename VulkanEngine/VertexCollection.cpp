@@ -27,6 +27,12 @@ void VertexCollection::consume(meshTypes type, std::vector<float> vertexData, st
 
 void VertexCollection::finalize(FinalizationInput input) {
 	this->logicalDevice = input.device;
+
+	// If no data is in the vertex or index buffer, report and return
+	if (vertexLump.size() <= 0 || indexLump.size() <= 0) {
+		std::cout << "VertexCollevetion: no vertices found, exiting early" << std::endl;
+		return;
+	}
 	
 	// Vertex Buffer
 	BufferInput inputChunk;
