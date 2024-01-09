@@ -31,15 +31,6 @@ struct Buffer {
 	vk::DeviceMemory bufferMemory;
 };
 
-// Assets
-enum class meshTypes {
-	TRIANGLE,
-	SQUARE,
-	STAR,
-	CYNDAQUIL,
-	SKYBOX
-};
-
 enum class PipelineTypes {
 	SKY,
 	FORWARD

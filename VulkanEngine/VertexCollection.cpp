@@ -4,7 +4,7 @@ VertexCollection::VertexCollection() {
 	indexOffset = 0;
 }
 
-void VertexCollection::consume(meshTypes type, std::vector<float> vertexData, std::vector<uint32_t> indices) {
+void VertexCollection::consume(const char* type, std::vector<float> vertexData, std::vector<uint32_t> indices) {
 
 	// TODO: change this to be more flexible, maybe add another data type
 	int vertexCount = static_cast<int>(vertexData.size() / 8);

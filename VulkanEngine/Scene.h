@@ -6,6 +6,6 @@
 class Scene {
 public:
 	Scene();
-	std::unordered_map<meshTypes, std::vector<glm::vec3>> positions;
+	std::unordered_map<const char*, std::vector<glm::vec3>> positions;
 	std::vector<Light> lights;
 };
