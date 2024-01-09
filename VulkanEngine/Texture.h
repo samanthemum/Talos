@@ -19,7 +19,7 @@ namespace vkImage {
 		int width, height, channels;
 		vk::Device device;
 		vk::PhysicalDevice physicalDevice;
-		std::vector<const char*> filenames;
+		std::vector<std::string> filenames;
 
 		// array to data
 		stbi_uc** pixels;

@@ -78,7 +78,7 @@ class Engine {
 
 		// Available Assets
 		VertexCollection* meshes;
-		std::unordered_map<const char*, vkImage::Texture*> textures;
+		std::unordered_map<std::string, vkImage::Texture*> textures;
 		vkImage::Texture* skybox;
 		vkJob::JobQueue workQueue;
 		std::vector<std::thread> workers;
@@ -107,7 +107,7 @@ class Engine {
 		void endWorkerThreads();
 		void prepareScene(vk::CommandBuffer commandBuffer);
 		void prepareFrame(uint32_t imageIndex, const Scene* scene);
-		void renderObjects(vk::CommandBuffer commandBuffer, const char* objectType, uint32_t& startInstance, uint32_t instanceCount);
+		void renderObjects(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount);
 		void drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 		void drawSky(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 };

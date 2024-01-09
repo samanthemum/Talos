@@ -11,6 +11,7 @@
 #include "Synchronization.h"
 #include "Descriptors.h"
 #include "ObjMesh.h"
+#include "ModelLoader.h"
 
 Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode) {
 	if (debugMode) {
@@ -304,7 +305,7 @@ void Engine::finalizeSetup() {
 	createFrameResources();
 }
 
-void Engine::renderObjects(vk::CommandBuffer commandBuffer, const char* objectType, uint32_t& startInstance, uint32_t instanceCount) {
+void Engine::renderObjects(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount) {
 
 	int indexCount = meshes->indexCounts.find(objectType)->second;
 	int firstIndex = meshes->firstIndices.find(objectType)->second;
@@ -339,7 +340,7 @@ void Engine::drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, 
 
 	// pass in data
 	uint32_t startInstance = 0;
-	for (std::pair<const char*, std::vector<glm::vec3>> pair : scene->positions) {
+	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->positions) {
 		renderObjects(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
 	}
 
@@ -487,13 +488,19 @@ void Engine::endWorkerThreads() {
 // TODO: Dynamic asset loading
 void Engine::makeAssets() {
 	meshes = new VertexCollection();
-	std::unordered_map<const char*, std::vector<const char*>> modelPaths = {
-		{"cyndaquil", {"models/cyndaquil.obj", "models/cyndaquil.mtl"}}
+
+	std::unordered_map<std::string, std::vector<std::string>> assetPaths = talos::util::getAssetDependencies("assets/cyndaquil.txt", debugMode);
+	std::vector<std::string> combinedModelMaterialPaths = assetPaths.at("model");
+	std::vector<std::string> materialPaths = assetPaths.at("material");
+	combinedModelMaterialPaths.insert(combinedModelMaterialPaths.end(), materialPaths.begin(), materialPaths.end());
+
+	std::unordered_map<std::string, std::vector<std::string>> modelPaths = {
+		{"assets/cyndaquil.txt", combinedModelMaterialPaths}
 	};
 
 	// Initialize textures
-	std::unordered_map<const char*, std::vector<const char*>> filenames = {
-		{"cyndaquil", {"CyndaquilTexture.png"}},
+	std::unordered_map<std::string, std::vector<std::string>> filenames = {
+		{"assets/cyndaquil.txt", assetPaths.at("texture")},
 	};
 
 	// Make descriptor pool
@@ -502,8 +509,8 @@ void Engine::makeAssets() {
 	texLayoutData.types.push_back(vk::DescriptorType::eCombinedImageSampler);
 	meshDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(filenames.size() + 1), texLayoutData);
 
-	std::unordered_map<const char*, vkMesh::ObjMesh> loadedMeshes;
-	for (std::pair<const char*, std::vector<const char*>> pair : modelPaths) {
+	std::unordered_map<std::string, vkMesh::ObjMesh> loadedMeshes;
+	for (std::pair<std::string, std::vector<std::string>> pair : modelPaths) {
 		vkMesh::ObjMesh mesh{}; 
 		loadedMeshes.emplace(pair.first, mesh);
 		workQueue.add(new vkJob::LoadModelJob(loadedMeshes[pair.first], pair.second[0], pair.second[1], glm::mat4(1.0f)));
@@ -582,7 +589,7 @@ void Engine::prepareFrame(uint32_t imageIndex, const Scene* scene) {
 	memcpy(frame.cameraMatrixWriteLocation, &(frame.cameraMatrixData), sizeof(vkUtilities::CameraMatrices));
 
 	size_t i = 0;
-	for (std::pair<const char*, std::vector<glm::vec3>> pair : scene->positions) {
+	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->positions) {
 		for (glm::vec3& position : pair.second) {
 			frame.modelTransforms[i] = glm::translate(glm::mat4(1.0f), position);
 			i++;

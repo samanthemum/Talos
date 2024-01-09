@@ -1,7 +1,7 @@
 #include "Scene.h"
 
 Scene::Scene() {
-	positions.insert({ "cyndaquil", {glm::vec3(0.0f, 0.0f, 0.0f)} });
+	positions.insert({ "assets/cyndaquil.txt", {glm::vec3(0.0f, 0.0f, 0.0f)} });
 	lights.push_back(Light{ glm::vec3(0.0f, 10.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) });
 }
 

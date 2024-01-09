@@ -21,7 +21,7 @@ namespace vkMesh {
 		std::vector<glm::vec2> vt;
 		glm::mat4 preTransform;
 
-		void load(const char* objFilepath, const char* mtlFilepath, glm::mat4 preTransform);
+		void load(std::string objFilepath, std::string mtlFilepath, glm::mat4 preTransform);
 		void readVertexData(const std::vector<std::string>& words);
 		void readTexCoordData(const std::vector<std::string>& words);
 		void readNormalData(const std::vector<std::string>& words);

@@ -4,15 +4,15 @@ VertexCollection::VertexCollection() {
 	indexOffset = 0;
 }
 
-void VertexCollection::consume(const char* type, std::vector<float> vertexData, std::vector<uint32_t> indices) {
+void VertexCollection::consume(std::string type, std::vector<float> vertexData, std::vector<uint32_t> indices) {
 
 	// TODO: change this to be more flexible, maybe add another data type
 	int vertexCount = static_cast<int>(vertexData.size() / 8);
 	int indexCount = static_cast<int>(indices.size());
 	int lastIndexPosition = static_cast<int>(indexLump.size());
 
-	firstIndices.insert(std::make_pair(type, lastIndexPosition));
-	indexCounts.insert(std::make_pair(type, indexCount));
+	firstIndices.insert(std::make_pair(type.c_str(), lastIndexPosition));
+	indexCounts.insert(std::make_pair(type.c_str(), indexCount));
 
 	for (float attribute : vertexData) {
 		vertexLump.push_back(attribute);
