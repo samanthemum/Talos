@@ -103,7 +103,7 @@ class Engine {
 
 		// make assets
 		void makeWorkerThreads();
-		void makeAssets();
+		void makeAssets(Scene* scene);
 		void endWorkerThreads();
 		void prepareScene(vk::CommandBuffer commandBuffer);
 		void prepareFrame(uint32_t imageIndex, const Scene* scene);

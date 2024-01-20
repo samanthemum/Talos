@@ -6,6 +6,14 @@
 class Scene {
 public:
 	Scene();
-	std::unordered_map<std::string, std::vector<glm::vec3>> positions;
+	Scene(std::string filepath);
+	std::unordered_map<std::string, std::vector<glm::vec3>> gameObjects;
 	std::vector<Light> lights;
+	std::vector<std::string> skyboxes;
+
+	// Asset loading info
+	std::vector<std::string> gameObjectAssetPaths;
+	
+	// TODO: Evaluate moving this
+	bool assetsLoaded = false;
 };

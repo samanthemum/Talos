@@ -58,7 +58,7 @@ App::App(int width, int height, bool debugMode) {
 	buildGlfwWindow(width, height, debugMode);
 
 	graphicsEngine = new Engine(width, height, window, debugMode);
-	scene = new Scene();
+	scene = new Scene("scenes/sample.txt");
 }
 
 App::~App() {

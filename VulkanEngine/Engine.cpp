@@ -35,8 +35,6 @@ Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode) {
 	setupPipeline();
 
 	finalizeSetup();
-
-	makeAssets();
 }
 
 Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode, std::vector<const char*> extensions) {
@@ -60,8 +58,6 @@ Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode, std::v
 	setupPipeline();
 
 	finalizeSetup();
-
-	makeAssets();
 }
 
 void Engine::setupVulkanInstance() {
@@ -340,7 +336,7 @@ void Engine::drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, 
 
 	// pass in data
 	uint32_t startInstance = 0;
-	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->positions) {
+	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
 		renderObjects(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
 	}
 
@@ -373,6 +369,11 @@ void Engine::drawSky(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene
 }
 
 void Engine::render(Scene* scene) {
+
+	if (!scene->assetsLoaded) {
+		makeAssets(scene);
+		scene->assetsLoaded = true;
+	}
 
 	device.waitForFences(1, &swapChainFrames[frameNumber].inFlightFence, VK_TRUE, UINT64_MAX);
 	device.resetFences(1, &swapChainFrames[frameNumber].inFlightFence);
@@ -486,28 +487,28 @@ void Engine::endWorkerThreads() {
 }
 
 // TODO: Dynamic asset loading
-void Engine::makeAssets() {
+void Engine::makeAssets(Scene* scene) {
 	meshes = new VertexCollection();
 
-	std::unordered_map<std::string, std::vector<std::string>> assetPaths = talos::util::getAssetDependencies("assets/cyndaquil.txt", debugMode);
-	std::vector<std::string> combinedModelMaterialPaths = assetPaths.at("model");
-	std::vector<std::string> materialPaths = assetPaths.at("material");
-	combinedModelMaterialPaths.insert(combinedModelMaterialPaths.end(), materialPaths.begin(), materialPaths.end());
+	std::unordered_map<std::string, std::vector<std::string>> modelPaths;
+	std::unordered_map<std::string, std::vector<std::string>> texturePaths;
 
-	std::unordered_map<std::string, std::vector<std::string>> modelPaths = {
-		{"assets/cyndaquil.txt", combinedModelMaterialPaths}
-	};
+	// Load all game objects needed for the scene
+	for (std::string gameObjectPath : scene->gameObjectAssetPaths) {
+		std::unordered_map<std::string, std::vector<std::string>> assetPaths = talos::util::getAssetDependencies(gameObjectPath.c_str(), debugMode);
+		std::vector<std::string> combinedModelMaterialPaths = assetPaths.at("model");
+		std::vector<std::string> materialPaths = assetPaths.at("material");
+		combinedModelMaterialPaths.insert(combinedModelMaterialPaths.end(), materialPaths.begin(), materialPaths.end());
 
-	// Initialize textures
-	std::unordered_map<std::string, std::vector<std::string>> filenames = {
-		{"assets/cyndaquil.txt", assetPaths.at("texture")},
-	};
+		modelPaths.insert({ gameObjectPath, combinedModelMaterialPaths });
+		texturePaths.insert({ gameObjectPath, assetPaths.at("texture") });
+	}
 
 	// Make descriptor pool
 	vkInit::DescriptorSetLayoutData texLayoutData;
 	texLayoutData.count = 1;
 	texLayoutData.types.push_back(vk::DescriptorType::eCombinedImageSampler);
-	meshDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(filenames.size() + 1), texLayoutData);
+	meshDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(texturePaths.size() + 1), texLayoutData);
 
 	std::unordered_map<std::string, vkMesh::ObjMesh> loadedMeshes;
 	for (std::pair<std::string, std::vector<std::string>> pair : modelPaths) {
@@ -524,7 +525,7 @@ void Engine::makeAssets() {
 	texInfo.pool = meshDescPool;
 	texInfo.texType = vk::ImageViewType::e2D;
 
-	for (const auto& [object, filename] : filenames) {
+	for (const auto& [object, filename] : texturePaths) {
 		texInfo.filename = filename;
 		textures[object] = new vkImage::Texture{};
 		workQueue.add(new vkJob::LoadTextureJob(textures[object], texInfo));
@@ -533,14 +534,16 @@ void Engine::makeAssets() {
 	makeWorkerThreads();
 
 	// Prepare skybox
-	std::unordered_map<std::string, std::vector<std::string>> skyboxPaths = talos::util::getAssetDependencies("assets/field_skybox.txt", debugMode);
-	texInfo.commandBuffer = mainCommandBuffer;
-	texInfo.queue = graphicsQueue;
-	texInfo.layout = meshDescLayout[PipelineTypes::SKY];
-	texInfo.texType = vk::ImageViewType::eCube;
-	texInfo.filename = skyboxPaths.at("texture");
-	skybox = new vkImage::Texture{};
-	skybox->load(texInfo);
+	for (std::string skyboxPath : scene->skyboxes) {
+		std::unordered_map<std::string, std::vector<std::string>> skyboxPaths = talos::util::getAssetDependencies(skyboxPath.c_str(), debugMode);
+		texInfo.commandBuffer = mainCommandBuffer;
+		texInfo.queue = graphicsQueue;
+		texInfo.layout = meshDescLayout[PipelineTypes::SKY];
+		texInfo.texType = vk::ImageViewType::eCube;
+		texInfo.filename = skyboxPaths.at("texture");
+		skybox = new vkImage::Texture{};
+		skybox->load(texInfo);
+	}
 
 	endWorkerThreads();
 
@@ -554,6 +557,8 @@ void Engine::makeAssets() {
 	input.queue = graphicsQueue;
 	input.commandBuffer = mainCommandBuffer;
 	meshes->finalize(input);
+
+
 }
 
 void Engine::prepareFrame(uint32_t imageIndex, const Scene* scene) {
@@ -585,14 +590,14 @@ void Engine::prepareFrame(uint32_t imageIndex, const Scene* scene) {
 	memcpy(frame.cameraMatrixWriteLocation, &(frame.cameraMatrixData), sizeof(vkUtilities::CameraMatrices));
 
 	size_t i = 0;
-	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->positions) {
+	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
 		for (glm::vec3& position : pair.second) {
 			frame.modelTransforms[i] = glm::translate(glm::mat4(1.0f), position);
 			i++;
 		}
 	}
 
-	memcpy(frame.modelTransformWriteLocation, frame.modelTransforms.data(), scene->positions.size() * sizeof(glm::mat4));
+	memcpy(frame.modelTransformWriteLocation, frame.modelTransforms.data(), scene->gameObjects.size() * sizeof(glm::mat4));
 
 	// Create transformed lights and pass them over
 	std::vector<Light> lightsInCS;
