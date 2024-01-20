@@ -13,12 +13,12 @@ class VertexCollection {
 	public:
 		VertexCollection();
 		~VertexCollection();
-		void consume(const char* type, std::vector<float> vertexData, std::vector<uint32_t> indices);
+		void consume(std::string type, std::vector<float> vertexData, std::vector<uint32_t> indices);
 		void finalize(FinalizationInput input);
 		Buffer vertexBuffer;
 		Buffer indexBuffer;
-		std::unordered_map<const char*, int> firstIndices;
-		std::unordered_map<const char*, int> indexCounts;
+		std::unordered_map<std::string, int> firstIndices;
+		std::unordered_map<std::string, int> indexCounts;
 
 	private:
 		int indexOffset;

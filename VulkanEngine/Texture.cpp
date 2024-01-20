@@ -71,7 +71,7 @@ namespace vkImage {
 		pixels = new stbi_uc* [filenames.size()];
 		
 		for (int i = 0; i < filenames.size(); i++) {
-			pixels[i] = stbi_load(filenames[i], &width, &height, &channels, STBI_rgb_alpha);
+			pixels[i] = stbi_load(filenames[i].c_str(), &width, &height, &channels, STBI_rgb_alpha);
 			if (!pixels[i]) {
 				std::cout << "Failed to load filename: " << filenames[i] << std::endl;
 			}

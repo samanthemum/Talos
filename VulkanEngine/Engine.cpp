@@ -11,6 +11,7 @@
 #include "Synchronization.h"
 #include "Descriptors.h"
 #include "ObjMesh.h"
+#include "ModelLoader.h"
 
 Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode) {
 	if (debugMode) {
@@ -34,8 +35,6 @@ Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode) {
 	setupPipeline();
 
 	finalizeSetup();
-
-	makeAssets();
 }
 
 Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode, std::vector<const char*> extensions) {
@@ -59,8 +58,6 @@ Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode, std::v
 	setupPipeline();
 
 	finalizeSetup();
-
-	makeAssets();
 }
 
 void Engine::setupVulkanInstance() {
@@ -304,7 +301,7 @@ void Engine::finalizeSetup() {
 	createFrameResources();
 }
 
-void Engine::renderObjects(vk::CommandBuffer commandBuffer, const char* objectType, uint32_t& startInstance, uint32_t instanceCount) {
+void Engine::renderObjects(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount) {
 
 	int indexCount = meshes->indexCounts.find(objectType)->second;
 	int firstIndex = meshes->firstIndices.find(objectType)->second;
@@ -339,7 +336,7 @@ void Engine::drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, 
 
 	// pass in data
 	uint32_t startInstance = 0;
-	for (std::pair<const char*, std::vector<glm::vec3>> pair : scene->positions) {
+	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
 		renderObjects(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
 	}
 
@@ -372,6 +369,11 @@ void Engine::drawSky(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene
 }
 
 void Engine::render(Scene* scene) {
+
+	if (!scene->assetsLoaded) {
+		makeAssets(scene);
+		scene->assetsLoaded = true;
+	}
 
 	device.waitForFences(1, &swapChainFrames[frameNumber].inFlightFence, VK_TRUE, UINT64_MAX);
 	device.resetFences(1, &swapChainFrames[frameNumber].inFlightFence);
@@ -485,25 +487,31 @@ void Engine::endWorkerThreads() {
 }
 
 // TODO: Dynamic asset loading
-void Engine::makeAssets() {
+void Engine::makeAssets(Scene* scene) {
 	meshes = new VertexCollection();
-	std::unordered_map<const char*, std::vector<const char*>> modelPaths = {
-		{"cyndaquil", {"models/cyndaquil.obj", "models/cyndaquil.mtl"}}
-	};
 
-	// Initialize textures
-	std::unordered_map<const char*, std::vector<const char*>> filenames = {
-		{"cyndaquil", {"CyndaquilTexture.png"}},
-	};
+	std::unordered_map<std::string, std::vector<std::string>> modelPaths;
+	std::unordered_map<std::string, std::vector<std::string>> texturePaths;
+
+	// Load all game objects needed for the scene
+	for (std::string gameObjectPath : scene->gameObjectAssetPaths) {
+		std::unordered_map<std::string, std::vector<std::string>> assetPaths = talos::util::getAssetDependencies(gameObjectPath.c_str(), debugMode);
+		std::vector<std::string> combinedModelMaterialPaths = assetPaths.at("model");
+		std::vector<std::string> materialPaths = assetPaths.at("material");
+		combinedModelMaterialPaths.insert(combinedModelMaterialPaths.end(), materialPaths.begin(), materialPaths.end());
+
+		modelPaths.insert({ gameObjectPath, combinedModelMaterialPaths });
+		texturePaths.insert({ gameObjectPath, assetPaths.at("texture") });
+	}
 
 	// Make descriptor pool
 	vkInit::DescriptorSetLayoutData texLayoutData;
 	texLayoutData.count = 1;
 	texLayoutData.types.push_back(vk::DescriptorType::eCombinedImageSampler);
-	meshDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(filenames.size() + 1), texLayoutData);
+	meshDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(texturePaths.size() + 1), texLayoutData);
 
-	std::unordered_map<const char*, vkMesh::ObjMesh> loadedMeshes;
-	for (std::pair<const char*, std::vector<const char*>> pair : modelPaths) {
+	std::unordered_map<std::string, vkMesh::ObjMesh> loadedMeshes;
+	for (std::pair<std::string, std::vector<std::string>> pair : modelPaths) {
 		vkMesh::ObjMesh mesh{}; 
 		loadedMeshes.emplace(pair.first, mesh);
 		workQueue.add(new vkJob::LoadModelJob(loadedMeshes[pair.first], pair.second[0], pair.second[1], glm::mat4(1.0f)));
@@ -517,7 +525,7 @@ void Engine::makeAssets() {
 	texInfo.pool = meshDescPool;
 	texInfo.texType = vk::ImageViewType::e2D;
 
-	for (const auto& [object, filename] : filenames) {
+	for (const auto& [object, filename] : texturePaths) {
 		texInfo.filename = filename;
 		textures[object] = new vkImage::Texture{};
 		workQueue.add(new vkJob::LoadTextureJob(textures[object], texInfo));
@@ -526,18 +534,16 @@ void Engine::makeAssets() {
 	makeWorkerThreads();
 
 	// Prepare skybox
-	texInfo.commandBuffer = mainCommandBuffer;
-	texInfo.queue = graphicsQueue;
-	texInfo.layout = meshDescLayout[PipelineTypes::SKY];
-	texInfo.texType = vk::ImageViewType::eCube;
-	texInfo.filename = { "skyboxes/field-skyboxes/FishPond/posx.jpg",
-						"skyboxes/field-skyboxes/FishPond/negx.jpg",
-						"skyboxes/field-skyboxes/FishPond/posy.jpg",
-						"skyboxes/field-skyboxes/FishPond/negy.jpg",
-						"skyboxes/field-skyboxes/FishPond/posz.jpg",
-						"skyboxes/field-skyboxes/FishPond/negz.jpg" };
-	skybox = new vkImage::Texture{};
-	skybox->load(texInfo);
+	for (std::string skyboxPath : scene->skyboxes) {
+		std::unordered_map<std::string, std::vector<std::string>> skyboxPaths = talos::util::getAssetDependencies(skyboxPath.c_str(), debugMode);
+		texInfo.commandBuffer = mainCommandBuffer;
+		texInfo.queue = graphicsQueue;
+		texInfo.layout = meshDescLayout[PipelineTypes::SKY];
+		texInfo.texType = vk::ImageViewType::eCube;
+		texInfo.filename = skyboxPaths.at("texture");
+		skybox = new vkImage::Texture{};
+		skybox->load(texInfo);
+	}
 
 	endWorkerThreads();
 
@@ -551,6 +557,8 @@ void Engine::makeAssets() {
 	input.queue = graphicsQueue;
 	input.commandBuffer = mainCommandBuffer;
 	meshes->finalize(input);
+
+
 }
 
 void Engine::prepareFrame(uint32_t imageIndex, const Scene* scene) {
@@ -582,14 +590,14 @@ void Engine::prepareFrame(uint32_t imageIndex, const Scene* scene) {
 	memcpy(frame.cameraMatrixWriteLocation, &(frame.cameraMatrixData), sizeof(vkUtilities::CameraMatrices));
 
 	size_t i = 0;
-	for (std::pair<const char*, std::vector<glm::vec3>> pair : scene->positions) {
+	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
 		for (glm::vec3& position : pair.second) {
 			frame.modelTransforms[i] = glm::translate(glm::mat4(1.0f), position);
 			i++;
 		}
 	}
 
-	memcpy(frame.modelTransformWriteLocation, frame.modelTransforms.data(), scene->positions.size() * sizeof(glm::mat4));
+	memcpy(frame.modelTransformWriteLocation, frame.modelTransforms.data(), scene->gameObjects.size() * sizeof(glm::mat4));
 
 	// Create transformed lights and pass them over
 	std::vector<Light> lightsInCS;

@@ -1,7 +1,7 @@
 #include "ObjMesh.h"
 
 namespace vkMesh {
-	void ObjMesh::load(const char* objFilepath, const char* mtlFilepath, glm::mat4 preTransform) {
+	void ObjMesh::load(std::string objFilepath, std::string mtlFilepath, glm::mat4 preTransform) {
 		this->preTransform = preTransform;
 
 		std::ifstream file;

@@ -156,6 +156,9 @@
     <ClCompile Include="Job.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Memory.cpp" />
+    <ClCompile Include="ModelLoader.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="ObjMesh.cpp" />
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Scene.cpp" />

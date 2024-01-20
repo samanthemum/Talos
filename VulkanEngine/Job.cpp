@@ -1,7 +1,7 @@
 #include "Job.h"
 
 namespace vkJob {
-	LoadModelJob::LoadModelJob(vkMesh::ObjMesh& mesh, const char* objFilepath, const char* mtlFilepath, glm::mat4 preTransform) : mesh(mesh) {
+	LoadModelJob::LoadModelJob(vkMesh::ObjMesh& mesh, std::string objFilepath, std::string mtlFilepath, glm::mat4 preTransform) : mesh(mesh) {
 		this->objFilepath = objFilepath;
 		this->mtlFilepath = mtlFilepath;
 		this->preTransform = preTransform;

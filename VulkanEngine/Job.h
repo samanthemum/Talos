@@ -20,11 +20,11 @@ namespace vkJob {
 
 	class LoadModelJob : public Job {
 	public:
-		const char* objFilepath;
-		const char* mtlFilepath;
+		std::string objFilepath;
+		std::string mtlFilepath;
 		glm::mat4 preTransform;
 		vkMesh::ObjMesh& mesh;
-		LoadModelJob(vkMesh::ObjMesh& objMesh, const char* objFilepath, const char* mtlFilepath, glm::mat4 preTransform);
+		LoadModelJob(vkMesh::ObjMesh& objMesh, std::string objFilepath, std::string mtlFilepath, glm::mat4 preTransform);
 		virtual void execute(vk::CommandBuffer commandBuffer, vk::Queue queue) final;
 	};
 

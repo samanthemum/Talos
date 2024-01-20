@@ -1,0 +1,6 @@
+texture assets/skyboxes/field-skyboxes/FishPond/posx.jpg
+texture assets/skyboxes/field-skyboxes/FishPond/negx.jpg
+texture assets/skyboxes/field-skyboxes/FishPond/posy.jpg
+texture assets/skyboxes/field-skyboxes/FishPond/negy.jpg
+texture assets/skyboxes/field-skyboxes/FishPond/posz.jpg
+texture assets/skyboxes/field-skyboxes/FishPond/negz.jpg
