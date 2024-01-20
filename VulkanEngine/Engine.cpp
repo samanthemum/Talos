@@ -533,16 +533,12 @@ void Engine::makeAssets() {
 	makeWorkerThreads();
 
 	// Prepare skybox
+	std::unordered_map<std::string, std::vector<std::string>> skyboxPaths = talos::util::getAssetDependencies("assets/field_skybox.txt", debugMode);
 	texInfo.commandBuffer = mainCommandBuffer;
 	texInfo.queue = graphicsQueue;
 	texInfo.layout = meshDescLayout[PipelineTypes::SKY];
 	texInfo.texType = vk::ImageViewType::eCube;
-	texInfo.filename = { "skyboxes/field-skyboxes/FishPond/posx.jpg",
-						"skyboxes/field-skyboxes/FishPond/negx.jpg",
-						"skyboxes/field-skyboxes/FishPond/posy.jpg",
-						"skyboxes/field-skyboxes/FishPond/negy.jpg",
-						"skyboxes/field-skyboxes/FishPond/posz.jpg",
-						"skyboxes/field-skyboxes/FishPond/negz.jpg" };
+	texInfo.filename = skyboxPaths.at("texture");
 	skybox = new vkImage::Texture{};
 	skybox->load(texInfo);
 

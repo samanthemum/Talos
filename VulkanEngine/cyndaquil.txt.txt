@@ -1,3 +1,0 @@
-model assets/models/cyndaquil.obj
-material assets/models/cyndaquil.mtl
-texture assets/textures/CyndaquilTexture.png
