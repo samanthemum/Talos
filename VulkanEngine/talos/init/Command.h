@@ -1,6 +1,6 @@
 #pragma once
-#include "config.h"
-#include "QueueFamilies.h"
+#include "../config.h"
+#include "../utilities/QueueFamilies.h"
 
 namespace vkInit{
 

@@ -1,6 +1,6 @@
 #pragma once
-#include "config.h"
-#include "RenderStructs.h"
+#include "../config.h"
+#include "../utilities/RenderStructs.h"
 #include "Light.h"
 
 class Scene {

@@ -4,7 +4,7 @@
 #include <set>
 #include <string>
 #include <optional>
-#include "QueueFamilies.h"
+#include "../utilities/QueueFamilies.h"
 
 namespace vkInit {
 
@@ -56,7 +56,7 @@ namespace vkInit {
 		{
 			if (debug)
 			{
-				logDeviceProperties(device);
+				vkUtilities::logDeviceProperties(device);
 			}
 
 			if (isSuitable(device, requestedExtensions, debug))

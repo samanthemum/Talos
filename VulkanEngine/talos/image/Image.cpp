@@ -1,9 +1,9 @@
 #include "Image.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#include "Memory.h"
-#include "Descriptors.h"
-#include "SingleTimeCommands.h"
+#include "../../stb_image.h"
+#include "../utilities/Memory.h"
+#include "../init/Descriptors.h"
+#include "../utilities/SingleTimeCommands.h"
 
 namespace vkImage {
 	vk::Image makeImage(ImageInput input) {

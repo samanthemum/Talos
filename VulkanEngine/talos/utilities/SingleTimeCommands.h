@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include "../config.h"
 
 /*
 	Used for starting and finishing one off jobs

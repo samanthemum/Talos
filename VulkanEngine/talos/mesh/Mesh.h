@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include "../config.h"
 
 // Refactor so stride doesn't have to be hardcoded ffs
 namespace vkMesh {

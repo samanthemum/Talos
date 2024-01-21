@@ -4,13 +4,13 @@
 
 // statically link the vulkan library with cpp
 #include <vulkan/vulkan.hpp>
-#include "SwapChainFrame.h"
-#include "Scene.h"
-#include "VertexCollection.h"
-#include "Image.h"
-#include "Texture.h"
-#include "Job.h"
-#include "WorkerThread.h"
+#include "utilities/SwapChainFrame.h"
+#include "gameobjects/Scene.h"
+#include "mesh/VertexCollection.h"
+#include "image/Image.h"
+#include "image/Texture.h"
+#include "job/Job.h"
+#include "job/WorkerThread.h"
 
 class Engine {
 	public:

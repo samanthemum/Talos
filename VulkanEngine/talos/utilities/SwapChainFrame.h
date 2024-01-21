@@ -1,8 +1,8 @@
 #pragma once
-#include "config.h"
+#include "../config.h"
 #include "Memory.h"
-#include "Image.h"
-#include "Light.h"
+#include "../image/Image.h"
+#include "../gameobjects/Light.h"
 
 namespace vkUtilities {
 

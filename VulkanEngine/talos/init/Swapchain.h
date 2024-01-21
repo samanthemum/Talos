@@ -1,8 +1,8 @@
 #pragma once
-#include "config.h"
-#include "QueueFamilies.h"
-#include "Logging.h"
-#include "SwapChainFrame.h";
+#include "../config.h"
+#include "../utilities/QueueFamilies.h"
+#include "../utilities/Logging.h"
+#include "../utilities/SwapChainFrame.h";
 
 namespace vkInit {
 	struct SwapChainSupportDetails {
@@ -48,21 +48,21 @@ namespace vkInit {
 
 			// transform support
 			std::cout << "Supported transforms" << std::endl;
-			std::vector<std::string> logList = vkInit::logTransformBit(support.capablities.supportedTransforms);
+			std::vector<std::string> logList = vkUtilities::logTransformBit(support.capablities.supportedTransforms);
 			for (std::string log : logList) {
 				std::cout << "\t" << log << std::endl;
 			}
 
 			// transform support
 			std::cout << "Supported alpha transforms" << std::endl;
-			logList = vkInit::log_alpha_composite_bits(support.capablities.supportedCompositeAlpha);
+			logList = vkUtilities::log_alpha_composite_bits(support.capablities.supportedCompositeAlpha);
 			for (std::string log : logList) {
 				std::cout << "\t" << log << std::endl;
 			}
 
 			// image usage support
 			std::cout << "Supported image usage" << std::endl;
-			logList = vkInit::log_image_usage_bits(support.capablities.supportedUsageFlags);
+			logList = vkUtilities::log_image_usage_bits(support.capablities.supportedUsageFlags);
 			for (std::string log : logList) {
 				std::cout << "\t" << log << std::endl;
 			}
@@ -82,7 +82,7 @@ namespace vkInit {
 		support.presentModes = device.getSurfacePresentModesKHR(surface);
 		if (debug) {
 			for (vk::PresentModeKHR mode : support.presentModes) {
-				std::string log = log_present_mode(mode);
+				std::string log = vkUtilities::log_present_mode(mode);
 				std::cout << "Present mode " << log << std::endl;
 			}
 		}

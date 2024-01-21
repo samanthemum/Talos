@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include "../config.h"
 
 namespace vkUtilities {
 	inline std::vector<char> readFile(std::string filename, bool debug = false) {

@@ -1,7 +1,7 @@
 #pragma once
-#include "config.h"
-#include "Engine.h"
-#include "Scene.h"
+#include "talos/config.h"
+#include "talos/Engine.h"
+#include "talos/gameobjects/Scene.h"
 
 class App {
 	private:

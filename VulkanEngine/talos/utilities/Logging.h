@@ -2,7 +2,7 @@
 #include <vulkan/vulkan.hpp>
 #include <iostream>
 
-namespace vkInit {
+namespace vkUtilities {
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
