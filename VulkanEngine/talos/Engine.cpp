@@ -214,46 +214,72 @@ void Engine::createDescriptorSetLayouts()  {
 void Engine::setupPipeline() {
 	vkInit::PipelineBuilder pipelineBuilder(device);
 
-	// Sky
-	pipelineBuilder.setColorOverwrite(true);
-	pipelineBuilder.specifyVertexShader("Shaders/sky_vert.spv");
-	pipelineBuilder.specifyFragmentShader("Shaders/sky_frag.spv");
-	pipelineBuilder.specifySwapchainExtent(swapChainExtent);
-	pipelineBuilder.clearDepthAttachment();
-	pipelineBuilder.addDescriptorSetLayout(vertexDescLayout[PipelineTypes::SKY]);
-	pipelineBuilder.addDescriptorSetLayout(meshDescLayout[PipelineTypes::SKY]);
-	pipelineBuilder.addColorAttachment(swapChainFormat, 0);
+	vkInit::PipelineInput pipelineInput;
 
-	pipelineBuilder.setDepthTest(false);
+	// Sky
+	pipelineInput.depthTest = false;
+	pipelineInput.shouldOverWriteColor = true;
+	pipelineInput.vertexShaderLocation = "Shaders/sky_vert.spv";
+	pipelineInput.fragmentShaderLocation = "Shaders/sky_frag.spv";
+	pipelineInput.shouldClearDepthAttachment = true;
+	pipelineInput.size = swapChainExtent;
+	pipelineInput.formats = { swapChainFormat };
+	pipelineInput.pipelineType = PipelineTypes::SKY;
+	
+	addPipeline(pipelineBuilder, pipelineInput);
+
+	// Forward
+	pipelineInput.pipelineType = PipelineTypes::FORWARD;
+	pipelineInput.depthTest = true;
+	pipelineInput.shouldOverWriteColor = false;
+	pipelineInput.vertexShaderLocation = "Shaders/vert.spv";
+	pipelineInput.fragmentShaderLocation = "Shaders/frag.spv";
+	pipelineInput.shouldClearDepthAttachment = false;
+	pipelineInput.depthFormat = swapChainFrames[0].depthBufferFormat;
+	pipelineInput.vertexAttributeDescription = vkMesh::getPosColorAttributeDescriptions();
+	pipelineInput.vertexBindingDescription = vkMesh::getPosColorBindingDescription();
+
+	addPipeline(pipelineBuilder, pipelineInput);
+}
+
+void Engine::addPipeline(vkInit::PipelineBuilder pipelineBuilder, vkInit::PipelineInput pipelineInput) {
+	pipelineBuilder.reset();
+
+	if (pipelineInput.vertexAttributeDescription.size() > 0) {
+		pipelineBuilder.specifyVertexFormat(pipelineInput.vertexBindingDescription, pipelineInput.vertexAttributeDescription);
+	}
+
+	pipelineBuilder.setColorOverwrite(pipelineInput.shouldOverWriteColor);
+	pipelineBuilder.specifyVertexShader(pipelineInput.vertexShaderLocation);
+	pipelineBuilder.specifyFragmentShader(pipelineInput.fragmentShaderLocation);
+	pipelineBuilder.specifySwapchainExtent(pipelineInput.size);
+	pipelineBuilder.clearDepthAttachment();
+	if (vertexDescLayout[pipelineInput.pipelineType] != nullptr) {
+		pipelineBuilder.addDescriptorSetLayout(vertexDescLayout[pipelineInput.pipelineType]);
+	}
+
+	if (fragmentDescLayout[pipelineInput.pipelineType] != nullptr) {
+		pipelineBuilder.addDescriptorSetLayout(fragmentDescLayout[pipelineInput.pipelineType]);
+	}
+
+	if (meshDescLayout[pipelineInput.pipelineType] != nullptr) {
+		pipelineBuilder.addDescriptorSetLayout(meshDescLayout[pipelineInput.pipelineType]);
+	}
+
+	for (int i = 0; i < pipelineInput.formats.size(); i++) {
+		pipelineBuilder.addColorAttachment(swapChainFormat, i);
+	}
+
+	pipelineBuilder.setDepthTest(pipelineInput.depthTest);
+	if (pipelineInput.depthTest) {
+		pipelineBuilder.specifyDepthAttachment(pipelineInput.depthFormat, pipelineInput.formats.size());
+	}
 
 	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build();
 
-	// Should be sky?
-	pipelineLayouts[PipelineTypes::SKY] = output.layout;
-	renderPasses[PipelineTypes::SKY] = output.renderPass;
-	pipelines[PipelineTypes::SKY] = output.pipeline;
-
-	pipelineBuilder.reset();
-
-	// Forward
-	pipelineBuilder.setColorOverwrite(false);
-	pipelineBuilder.specifyVertexFormat(vkMesh::getPosColorBindingDescription(), vkMesh::getPosColorAttributeDescriptions());
-	pipelineBuilder.specifyVertexShader("Shaders/vert.spv");
-	pipelineBuilder.specifyFragmentShader("Shaders/frag.spv");
-	pipelineBuilder.specifySwapchainExtent(swapChainExtent);
-	pipelineBuilder.specifyDepthAttachment(swapChainFrames[0].depthBufferFormat, 1);
-	pipelineBuilder.addDescriptorSetLayout(vertexDescLayout[PipelineTypes::FORWARD]);
-	pipelineBuilder.addDescriptorSetLayout(fragmentDescLayout[PipelineTypes::FORWARD]);
-	pipelineBuilder.addDescriptorSetLayout(meshDescLayout[PipelineTypes::FORWARD]);
-	pipelineBuilder.addColorAttachment(swapChainFormat, 0);
-
-	pipelineBuilder.setDepthTest(true);
-
-	output = pipelineBuilder.build();
-
-	pipelineLayouts[PipelineTypes::FORWARD] = output.layout;
-	renderPasses[PipelineTypes::FORWARD] = output.renderPass;
-	pipelines[PipelineTypes::FORWARD] = output.pipeline;
+	pipelineLayouts[pipelineInput.pipelineType] = output.layout;
+	renderPasses[pipelineInput.pipelineType] = output.renderPass;
+	pipelines[pipelineInput.pipelineType] = output.pipeline;
 }
 
 void Engine::createFrameBuffers() {

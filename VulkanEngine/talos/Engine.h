@@ -11,6 +11,8 @@
 #include "image/Texture.h"
 #include "job/Job.h"
 #include "job/WorkerThread.h"
+#include "pipeline/PipelineInput.h"
+#include "pipeline/Pipeline.h"
 
 class Engine {
 	public:
@@ -96,6 +98,7 @@ class Engine {
 		// pipeline setup
 		void createDescriptorSetLayouts();
 		void setupPipeline();
+		void addPipeline(vkInit::PipelineBuilder pipelineBuilder, vkInit::PipelineInput pipelineInput);
 		
 		void finalizeSetup();
 		void createFrameBuffers();

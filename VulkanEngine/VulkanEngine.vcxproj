@@ -185,6 +185,7 @@
     <ClInclude Include="talos\pipeline\Framebuffer.h" />
     <ClInclude Include="talos\pipeline\Instance.h" />
     <ClInclude Include="talos\pipeline\Pipeline.h" />
+    <ClInclude Include="talos\pipeline\PipelineInput.h" />
     <ClInclude Include="talos\pipeline\Swapchain.h" />
     <ClInclude Include="talos\pipeline\Synchronization.h" />
     <ClInclude Include="talos\utilities\FileLoader.h" />
