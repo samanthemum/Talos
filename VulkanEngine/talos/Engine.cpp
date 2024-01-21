@@ -1,15 +1,15 @@
 #include "Engine.h"
 
 #include <iostream>
-#include "init/Instance.h"
+#include "pipeline/Instance.h"
 #include "utilities/Logging.h"
-#include "init/Device.h"
-#include "init/Swapchain.h"
-#include "init/Pipeline.h"
-#include "init/Framebuffer.h"
-#include "init/Command.h"
-#include "init/Synchronization.h"
-#include "init/Descriptors.h"
+#include "pipeline/Device.h"
+#include "pipeline/Swapchain.h"
+#include "pipeline/Pipeline.h"
+#include "pipeline/Framebuffer.h"
+#include "pipeline/Command.h"
+#include "pipeline/Synchronization.h"
+#include "pipeline/Descriptors.h"
 #include "mesh/ObjMesh.h"
 #include "utilities/ModelLoader.h"
 

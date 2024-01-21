@@ -2,7 +2,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../../stb_image.h"
 #include "../utilities/Memory.h"
-#include "../init/Descriptors.h"
+#include "../pipeline/Descriptors.h"
 #include "../utilities/SingleTimeCommands.h"
 
 namespace vkImage {

@@ -1,5 +1,5 @@
 #pragma once
-#include "..//config.h"
+#include "../config.h"
 #include "../utilities/FileLoader.h"
 #include "../utilities/RenderStructs.h"
 #include "../mesh/Mesh.h"

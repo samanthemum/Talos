@@ -27,12 +27,6 @@
     <ClCompile Include="talos\image\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="talos\init\Descriptors.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="talos\init\Pipeline.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="talos\utilities\Memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -66,6 +60,12 @@
     <ClCompile Include="talos\gameobjects\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="talos\pipeline\Descriptors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="talos\pipeline\Pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h">
@@ -75,30 +75,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="talos\image\Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="talos\init\Command.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="talos\init\Descriptors.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="talos\init\Device.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="talos\init\Framebuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="talos\init\Instance.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="talos\init\Pipeline.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="talos\init\Swapchain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="talos\init\Synchronization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="talos\utilities\FileLoader.h">
@@ -153,6 +129,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="talos\image\Image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\pipeline\Command.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\pipeline\Descriptors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\pipeline\Device.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\pipeline\Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\pipeline\Instance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\pipeline\Pipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\pipeline\Swapchain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\pipeline\Synchronization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

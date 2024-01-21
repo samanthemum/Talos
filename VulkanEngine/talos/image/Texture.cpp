@@ -1,7 +1,7 @@
 #include "Texture.h"
 #include "../../stb_image.h"
 #include "../utilities/Memory.h"
-#include "../init/Descriptors.h"
+#include "../pipeline/Descriptors.h"
 
 namespace vkImage {
 
