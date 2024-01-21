@@ -1,17 +1,17 @@
 #include "Engine.h"
 
 #include <iostream>
-#include "Instance.h"
-#include "Logging.h"
-#include "Device.h"
-#include "Swapchain.h"
-#include "Pipeline.h"
-#include "Framebuffer.h"
-#include "Command.h"
-#include "Synchronization.h"
-#include "Descriptors.h"
-#include "ObjMesh.h"
-#include "ModelLoader.h"
+#include "pipeline/Instance.h"
+#include "utilities/Logging.h"
+#include "pipeline/Device.h"
+#include "pipeline/Swapchain.h"
+#include "pipeline/Pipeline.h"
+#include "pipeline/Framebuffer.h"
+#include "pipeline/Command.h"
+#include "pipeline/Synchronization.h"
+#include "pipeline/Descriptors.h"
+#include "mesh/ObjMesh.h"
+#include "utilities/ModelLoader.h"
 
 Engine::Engine(int width, int height, GLFWwindow* window, bool debugMode) {
 	if (debugMode) {
@@ -88,7 +88,7 @@ void Engine::setupVulkanInstance() {
 
 void Engine::createDebugUtilsMessenger() {
 	std::cout << "Creating debug messenger!" << std::endl;
-	debugMessenger = vkInit::make_debug_messenger(instance, dldi);
+	debugMessenger = vkUtilities::make_debug_messenger(instance, dldi);
 }
 
 void Engine::setRequestedExtensions(std::vector<const char*> newExtensions) {
@@ -164,6 +164,9 @@ void Engine::recreateSwapchain() {
 	vkInit::commandBufferInput cbInput{ device, commandPool, swapChainFrames };
 	makeFrameCommandBuffers(cbInput, debugMode);
 	createFrameResources();
+
+	// TODO: Dellocate and reallocate pipeline to fix viewport when resizing
+	// setupPipeline();
 }
 
 void Engine::createDescriptorSetLayouts()  {

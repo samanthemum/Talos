@@ -1,7 +1,7 @@
 #pragma once
-#include "stb_image.h"
-#include "config.h"
-#include "Image.h"
+#include "../../stb_image.h"
+#include "../config.h"
+#include "../image/Image.h"
 
 namespace vkImage {
 

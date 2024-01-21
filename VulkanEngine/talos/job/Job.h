@@ -1,8 +1,8 @@
 #pragma once
-#include "config.h"
-#include "ObjMesh.h"
-#include "Image.h"
-#include "Texture.h"
+#include "../config.h"
+#include "../mesh/ObjMesh.h"
+#include "../image/Image.h"
+#include "../image/Texture.h"
 #include <queue>
 
 namespace vkJob {

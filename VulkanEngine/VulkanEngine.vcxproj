@@ -149,59 +149,52 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
-    <ClCompile Include="config.cpp" />
-    <ClCompile Include="Descriptors.cpp" />
-    <ClCompile Include="Engine.cpp" />
-    <ClCompile Include="Image.cpp" />
-    <ClCompile Include="Job.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Memory.cpp" />
-    <ClCompile Include="ModelLoader.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="ObjMesh.cpp" />
-    <ClCompile Include="Pipeline.cpp" />
-    <ClCompile Include="Scene.cpp" />
-    <ClCompile Include="SingleTimeCommands.cpp" />
-    <ClCompile Include="SwapChainFrame.cpp" />
-    <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="TriangleMesh.cpp" />
-    <ClCompile Include="VertexCollection.cpp" />
-    <ClCompile Include="WorkerThread.cpp" />
+    <ClCompile Include="talos\config.cpp" />
+    <ClCompile Include="talos\Engine.cpp" />
+    <ClCompile Include="talos\gameobjects\Scene.cpp" />
+    <ClCompile Include="talos\image\Image.cpp" />
+    <ClCompile Include="talos\image\Texture.cpp" />
+    <ClCompile Include="talos\job\Job.cpp" />
+    <ClCompile Include="talos\job\WorkerThread.cpp" />
+    <ClCompile Include="talos\mesh\ObjMesh.cpp" />
+    <ClCompile Include="talos\mesh\VertexCollection.cpp" />
+    <ClCompile Include="talos\pipeline\Descriptors.cpp" />
+    <ClCompile Include="talos\pipeline\Pipeline.cpp" />
+    <ClCompile Include="talos\utilities\Memory.cpp" />
+    <ClCompile Include="talos\utilities\SingleTimeCommands.cpp" />
+    <ClCompile Include="talos\utilities\SwapChainFrame.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
-    <ClInclude Include="Command.h" />
-    <ClInclude Include="config.h" />
-    <ClInclude Include="Descriptors.h" />
-    <ClInclude Include="Device.h" />
-    <ClInclude Include="Engine.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="FileLoader.h" />
-    <ClInclude Include="Framebuffer.h" />
-    <ClInclude Include="Image.h" />
-    <ClInclude Include="Instance.h" />
-    <ClInclude Include="Job.h" />
-    <ClInclude Include="Light.h" />
-    <ClInclude Include="Logging.h" />
-    <ClInclude Include="Memory.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="ObjMesh.h" />
-    <ClInclude Include="Pipeline.h" />
-    <ClInclude Include="QueueFamilies.h" />
-    <ClInclude Include="RenderStructs.h" />
-    <ClInclude Include="Scene.h" />
-    <ClInclude Include="SingleTimeCommands.h" />
     <ClInclude Include="stb_image.h" />
-    <ClInclude Include="Swapchain.h" />
-    <ClInclude Include="SwapChainFrame.h" />
-    <ClInclude Include="Synchronization.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="TriangleMesh.h" />
-    <ClInclude Include="VertexCollection.h" />
-    <ClInclude Include="WorkerThread.h" />
+    <ClInclude Include="talos\config.h" />
+    <ClInclude Include="talos\Engine.h" />
+    <ClInclude Include="talos\gameobjects\Light.h" />
+    <ClInclude Include="talos\gameobjects\Scene.h" />
+    <ClInclude Include="talos\image\Image.h" />
+    <ClInclude Include="talos\image\Texture.h" />
+    <ClInclude Include="talos\job\Job.h" />
+    <ClInclude Include="talos\job\WorkerThread.h" />
+    <ClInclude Include="talos\mesh\Mesh.h" />
+    <ClInclude Include="talos\mesh\ObjMesh.h" />
+    <ClInclude Include="talos\mesh\VertexCollection.h" />
+    <ClInclude Include="talos\pipeline\Command.h" />
+    <ClInclude Include="talos\pipeline\Descriptors.h" />
+    <ClInclude Include="talos\pipeline\Device.h" />
+    <ClInclude Include="talos\pipeline\Framebuffer.h" />
+    <ClInclude Include="talos\pipeline\Instance.h" />
+    <ClInclude Include="talos\pipeline\Pipeline.h" />
+    <ClInclude Include="talos\pipeline\Swapchain.h" />
+    <ClInclude Include="talos\pipeline\Synchronization.h" />
+    <ClInclude Include="talos\utilities\FileLoader.h" />
+    <ClInclude Include="talos\utilities\Logging.h" />
+    <ClInclude Include="talos\utilities\Memory.h" />
+    <ClInclude Include="talos\utilities\ModelLoader.h" />
+    <ClInclude Include="talos\utilities\QueueFamilies.h" />
+    <ClInclude Include="talos\utilities\RenderStructs.h" />
+    <ClInclude Include="talos\utilities\SingleTimeCommands.h" />
+    <ClInclude Include="talos\utilities\SwapChainFrame.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="shader.vert">

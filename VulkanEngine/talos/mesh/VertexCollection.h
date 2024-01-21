@@ -1,6 +1,6 @@
 #pragma once
-#include "config.h"
-#include "Memory.h"
+#include "../config.h"
+#include "../utilities/Memory.h"
 
 struct FinalizationInput {
 	vk::Device device;

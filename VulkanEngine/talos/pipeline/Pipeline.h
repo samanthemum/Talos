@@ -1,8 +1,8 @@
 #pragma once
-#include "config.h"
-#include "FileLoader.h"
-#include "RenderStructs.h"
-#include "Mesh.h"
+#include "../config.h"
+#include "../utilities/FileLoader.h"
+#include "../utilities/RenderStructs.h"
+#include "../mesh/Mesh.h"
 
 namespace vkInit {
 

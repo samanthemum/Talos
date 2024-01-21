@@ -1,6 +1,6 @@
 #pragma once
-#include "config.h"
-#include "SwapChainFrame.h"
+#include "../config.h"
+#include "../utilities/SwapChainFrame.h"
 
 namespace vkInit {
 	struct frameBufferInput {
