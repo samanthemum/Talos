@@ -35,11 +35,21 @@ namespace vkUtilities {
 		vk::Image image;
 		vk::ImageView imageView;
 		std::unordered_map<PipelineTypes, vk::Framebuffer> frameBuffer;
-		// TODO: Make these also maps in the future
+		// TODO: Make these also maps in the future?
 		vk::Image depthBuffer;
 		vk::DeviceMemory depthBufferMemory;
 		vk::ImageView depthBufferView;
 		vk::Format depthBufferFormat;
+
+		// G buffers
+		vk::Image albedoBuffer;
+		vk::DeviceMemory albedoBufferMemory;
+		vk::ImageView albedoBufferView;
+
+		vk::Image normalBuffer;
+		vk::DeviceMemory normalBufferMemory;
+		vk::ImageView normalBufferView;
+
 		int width, height;
 
 
@@ -88,6 +98,12 @@ namespace vkUtilities {
 		void writeDescriptorSets();
 
 		void createDepthResources();
+
+		void createAlbedoBuffer();
+
+		void createNormalBuffer();
+
+		void createImageResources(vkImage::ImageInput imageInput, vk::ImageAspectFlagBits flags, vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView);
 
 		void updateLightInformation(const std::vector<Light>& lights);
 

@@ -129,6 +129,9 @@ void Engine::createSwapchain() {
 		frame.height = swapChainExtent.height;
 
 		frame.createDepthResources();
+
+		frame.createAlbedoBuffer();
+		frame.createNormalBuffer();
 	}
 }
 
@@ -180,15 +183,17 @@ void Engine::createDescriptorSetLayouts()  {
 	bindings.shaderStages.push_back(vk::ShaderStageFlagBits::eVertex);
 	vertexDescLayout[PipelineTypes::SKY] = vkInit::makeDescriptorSetLayout(device, bindings);
 
+	// NOTE: This will need to changed for the forward pass with deferred!
 	bindings.count = 2;
 	bindings.indices.push_back(1);
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	bindings.counts.push_back(1);
 	bindings.shaderStages.push_back(vk::ShaderStageFlagBits::eVertex);
 	vertexDescLayout[PipelineTypes::FORWARD] = vkInit::makeDescriptorSetLayout(device, bindings);
-	
+	vertexDescLayout[PipelineTypes::DEFERRED] = vkInit::makeDescriptorSetLayout(device, bindings);
 
 	// Fragment shader descriptor bindings
+	// TODO: Split between this and mesh bindings seems super duper arbitrary???
 	vkInit::DescriptorSetLayoutData fragmentBindings;
 	fragmentBindings.count = 1;
 
@@ -208,6 +213,7 @@ void Engine::createDescriptorSetLayouts()  {
 
 	// TODO: Figure out a better way to do this
 	meshDescLayout[PipelineTypes::FORWARD] = vkInit::makeDescriptorSetLayout(device, meshBindings);
+	meshDescLayout[PipelineTypes::DEFERRED] = vkInit::makeDescriptorSetLayout(device, meshBindings);
 	meshDescLayout[PipelineTypes::SKY] = vkInit::makeDescriptorSetLayout(device, meshBindings);
 }
 
@@ -236,6 +242,17 @@ void Engine::setupPipeline() {
 	pipelineInput.fragmentShaderLocation = "Shaders/frag.spv";
 	pipelineInput.shouldClearDepthAttachment = false;
 	pipelineInput.depthFormat = swapChainFrames[0].depthBufferFormat;
+	// TODO: These lines have to change for use with the deferred pass
+	pipelineInput.vertexAttributeDescription = vkMesh::getPosColorAttributeDescriptions();
+	pipelineInput.vertexBindingDescription = vkMesh::getPosColorBindingDescription();
+
+	addPipeline(pipelineBuilder, pipelineInput);
+
+	// Deferred
+	pipelineInput.pipelineType = PipelineTypes::DEFERRED;
+	pipelineInput.vertexShaderLocation = "Shaders/prepass_vert.spv";
+	pipelineInput.fragmentShaderLocation = "Shaders/prepass_frag.spv";
+	pipelineInput.formats = { swapChainFormat, swapChainFormat };
 	pipelineInput.vertexAttributeDescription = vkMesh::getPosColorAttributeDescriptions();
 	pipelineInput.vertexBindingDescription = vkMesh::getPosColorBindingDescription();
 
@@ -678,12 +695,17 @@ Engine::~Engine() {
 		device.destroyRenderPass(renderPasses[PipelineTypes::SKY]);
 		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::SKY]);
 		device.destroyPipeline(pipelines[PipelineTypes::SKY]);
+		device.destroyRenderPass(renderPasses[PipelineTypes::DEFERRED]);
+		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::DEFERRED]);
+		device.destroyPipeline(pipelines[PipelineTypes::DEFERRED]);
 		destroySwapchain();
 		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::FORWARD]);
 		device.destroyDescriptorSetLayout(fragmentDescLayout[PipelineTypes::FORWARD]);
 		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::FORWARD]);
 		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::SKY]);
 		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::SKY]);
+		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::DEFERRED]);
+		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::DEFERRED]);
 		device.destroyDescriptorPool(meshDescPool);
 		device.destroy();
 	}

@@ -10,7 +10,6 @@ namespace vkInit {
 		configureInputAssembly();
 		makeRasterizerInfo();
 		configureMultisampling();
-		configureColorBlending();
 		pipelineInfo.basePipelineHandle = nullptr;
 	}
 
@@ -221,6 +220,7 @@ namespace vkInit {
 		pipelineInfo.pMultisampleState = &multisampling;
 
 		//Color Blend
+		configureColorBlending();
 		pipelineInfo.pColorBlendState = &colorBlending;
 
 		//Pipeline Layout
@@ -301,14 +301,18 @@ namespace vkInit {
 	// TODO: Realistically, this also should be hella configurable
 	void PipelineBuilder::configureColorBlending() {
 
+		vk::PipelineColorBlendAttachmentState colorBlendAttachment;
 		colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 		colorBlendAttachment.blendEnable = VK_FALSE;
 
 		colorBlending.flags = vk::PipelineColorBlendStateCreateFlags();
 		colorBlending.logicOpEnable = VK_FALSE;
 		colorBlending.logicOp = vk::LogicOp::eCopy;
-		colorBlending.attachmentCount = 1;
-		colorBlending.pAttachments = &colorBlendAttachment;
+		colorBlending.attachmentCount = shouldDepthTest ? attachmentDescriptions.size() - 1 : attachmentDescriptions.size();
+		for (int i = 0; i < colorBlending.attachmentCount; i++) {
+			colorBlendAttachments.push_back(colorBlendAttachment);
+		}
+		colorBlending.pAttachments = colorBlendAttachments.data();
 		colorBlending.blendConstants[0] = 0.0f;
 		colorBlending.blendConstants[1] = 0.0f;
 		colorBlending.blendConstants[2] = 0.0f;

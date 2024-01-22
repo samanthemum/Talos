@@ -33,7 +33,8 @@ struct Buffer {
 
 enum class PipelineTypes {
 	SKY,
-	FORWARD
+	FORWARD,
+	DEFERRED
 };
 
 std::vector<std::string> split(std::string line, std::string delimiter);

@@ -118,6 +118,7 @@ namespace vkUtilities {
 			device.updateDescriptorSets(writeOps, nullptr);
 		}
 
+		// Reference this when creating gbuffers, probably
 		void SwapChainFrame::createDepthResources() {
 			// Get depth format
 			depthBufferFormat = vkImage::findSupportedFormat(physicalDevice,
@@ -136,10 +137,54 @@ namespace vkUtilities {
 			imageInfo.format = depthBufferFormat;
 			imageInfo.arrayCount = 1;
 
-			depthBuffer = vkImage::makeImage(imageInfo);
-			depthBufferMemory = vkImage::makeImageMemory(imageInfo, depthBuffer);
-			depthBufferView = vkImage::makeImageView(device, depthBuffer, depthBufferFormat, vk::ImageAspectFlagBits::eDepth, vk::ImageViewType::e2D, 1);
+			createImageResources(imageInfo, vk::ImageAspectFlagBits::eDepth, depthBuffer, depthBufferMemory, depthBufferView);
+		}
 
+		void SwapChainFrame::createAlbedoBuffer() {
+			vk::Format albedoBufferFormat = vkImage::findSupportedFormat(physicalDevice,
+				{ vk::Format::eB8G8R8A8Unorm },
+				vk::ImageTiling::eOptimal,
+				vk::FormatFeatureFlagBits::eColorAttachment);
+
+			vkImage::ImageInput imageInfo;
+			imageInfo.device = device;
+			imageInfo.physicalDevice = physicalDevice;
+			imageInfo.tiling = vk::ImageTiling::eOptimal;
+			imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment;
+			imageInfo.memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+			imageInfo.width = width;
+			imageInfo.height = height;
+			imageInfo.format = albedoBufferFormat;
+			imageInfo.arrayCount = 1;
+
+			createImageResources(imageInfo, vk::ImageAspectFlagBits::eColor, albedoBuffer, albedoBufferMemory, albedoBufferView);
+		}
+
+		void SwapChainFrame::createNormalBuffer() {
+			// TODO: this format might absolutely destroy our values. f in the chat
+			vk::Format normalBufferFormat = vkImage::findSupportedFormat(physicalDevice,
+				{ vk::Format::eB8G8R8A8Unorm },
+				vk::ImageTiling::eOptimal,
+				vk::FormatFeatureFlagBits::eColorAttachment);
+
+			vkImage::ImageInput imageInfo;
+			imageInfo.device = device;
+			imageInfo.physicalDevice = physicalDevice;
+			imageInfo.tiling = vk::ImageTiling::eOptimal;
+			imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment;
+			imageInfo.memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+			imageInfo.width = width;
+			imageInfo.height = height;
+			imageInfo.format = normalBufferFormat;
+			imageInfo.arrayCount = 1;
+
+			createImageResources(imageInfo, vk::ImageAspectFlagBits::eColor, normalBuffer, normalBufferMemory, normalBufferView);
+		}
+
+		void SwapChainFrame::createImageResources(vkImage::ImageInput imageInput, vk::ImageAspectFlagBits flags, vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView) {
+			image = vkImage::makeImage(imageInput);
+			memory = vkImage::makeImageMemory(imageInput, image);
+			imageView = vkImage::makeImageView(device, image, imageInput.format, flags, vk::ImageViewType::e2D, 1);
 		}
 
 		void SwapChainFrame::updateLightInformation(const std::vector<Light>& lights) {
@@ -153,6 +198,14 @@ namespace vkUtilities {
 		}
 
 		void SwapChainFrame::destroy() {
+			device.destroyImage(albedoBuffer);
+			device.freeMemory(albedoBufferMemory);
+			device.destroyImageView(albedoBufferView);
+
+			device.destroyImage(normalBuffer);
+			device.freeMemory(normalBufferMemory);
+			device.destroyImageView(normalBufferView);
+
 			device.destroyImage(depthBuffer);
 			device.freeMemory(depthBufferMemory);
 			device.destroyImageView(depthBufferView);
@@ -161,6 +214,7 @@ namespace vkUtilities {
 			// TODO: Better cleanup
 			device.destroyFramebuffer(frameBuffer[PipelineTypes::FORWARD]);
 			device.destroyFramebuffer(frameBuffer[PipelineTypes::SKY]);
+			device.destroyFramebuffer(frameBuffer[PipelineTypes::DEFERRED]);
 			device.destroyFence(inFlightFence);
 			device.destroySemaphore(renderSemaphore);
 			device.destroySemaphore(presentSemaphore);

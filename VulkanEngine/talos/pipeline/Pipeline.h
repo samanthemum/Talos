@@ -108,7 +108,7 @@ namespace vkInit {
 
 			vk::PipelineMultisampleStateCreateInfo multisampling = {};
 
-			vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
+			std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments = {};
 			vk::PipelineColorBlendStateCreateInfo colorBlending = {};
 
 			std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;

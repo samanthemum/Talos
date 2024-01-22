@@ -11,7 +11,7 @@ layout(location = 6) in vec3 fragNormalCameraSpace;
 layout(location = 0) out vec4 albedo;
 layout(location = 1) out vec4 normal;
 
-layout(set = 2, binding = 0) uniform sampler2D tex;
+layout(set = 1, binding = 0) uniform sampler2D tex;
 
 void main() {
 
