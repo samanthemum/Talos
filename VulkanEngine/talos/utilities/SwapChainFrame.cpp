@@ -75,7 +75,29 @@ namespace vkUtilities {
 			lightBufferDescriptor.range = sizeof(glm::vec4) + numSupportedLights * 2 * sizeof(glm::vec4);
 		}
 
+		void SwapChainFrame::createPrepassBufferTextures(vk::DescriptorPool& descPool, vk::DescriptorSetLayout& layout) {
+			prepassBufferDescriptorSet = vkInit::allocateDescriptorSet(device, descPool, layout);
+
+			vkImage::TextureInput texInput;
+			texInput.commandBuffer = commandBuffer;
+			texInput.device = this->device;
+			texInput.dstBinding = 0;
+			texInput.physicalDevice = physicalDevice;
+			texInput.pool = descPool;
+			texInput.layout = layout;
+			texInput.set = prepassBufferDescriptorSet;
+
+			albedoTexture.load(texInput, albedoBufferView);
+
+			texInput.dstBinding = 1;
+			normalTexture.load(texInput, normalBufferView);
+
+			texInput.dstBinding = 2;
+			positionTexture.load(texInput, positionBufferView);
+		}
+
 		// TODO: Separate into write ops and a write execution?
+		// TODO: this may be writing to things multiple times, yeesh
 		void SwapChainFrame::createDescriptorSets() {
 			
 			// TODO: Break this down into write operations in a different function
@@ -103,6 +125,22 @@ namespace vkUtilities {
 			modelWriteInfo.descriptorType = vk::DescriptorType::eStorageBuffer;
 			modelWriteInfo.pBufferInfo = &modelBufferDescriptor;
 
+			vk::WriteDescriptorSet cameraMatrixWritePrepass;
+			cameraMatrixWritePrepass.dstSet = vertexDescSet[PipelineTypes::PREPASS];
+			cameraMatrixWritePrepass.dstBinding = 0;
+			cameraMatrixWritePrepass.dstArrayElement = 0;
+			cameraMatrixWritePrepass.descriptorCount = 1;
+			cameraMatrixWritePrepass.descriptorType = vk::DescriptorType::eUniformBuffer;
+			cameraMatrixWritePrepass.pBufferInfo = &cameraMatrixDescriptor;
+
+			vk::WriteDescriptorSet modelWriteInfoPrepass;
+			modelWriteInfoPrepass.dstSet = vertexDescSet[PipelineTypes::PREPASS];
+			modelWriteInfoPrepass.dstBinding = 1;
+			modelWriteInfoPrepass.dstArrayElement = 0;
+			modelWriteInfoPrepass.descriptorCount = 1;
+			modelWriteInfoPrepass.descriptorType = vk::DescriptorType::eStorageBuffer;
+			modelWriteInfoPrepass.pBufferInfo = &modelBufferDescriptor;
+
 			vk::WriteDescriptorSet lightWriteInfo;
 			lightWriteInfo.dstSet = fragDescSet[PipelineTypes::FORWARD];
 			lightWriteInfo.dstBinding = 0;
@@ -111,7 +149,23 @@ namespace vkUtilities {
 			lightWriteInfo.descriptorType = vk::DescriptorType::eUniformBuffer;
 			lightWriteInfo.pBufferInfo = &lightBufferDescriptor;
 
-			writeOps = { camereaVectorWrite, cameraMatrixWrite, modelWriteInfo, lightWriteInfo };
+			vk::WriteDescriptorSet cameraMatrixWriteDeferredFrag;
+			cameraMatrixWriteDeferredFrag.dstSet = fragDescSet[PipelineTypes::DEFERRED];
+			cameraMatrixWriteDeferredFrag.dstBinding = 0;
+			cameraMatrixWriteDeferredFrag.dstArrayElement = 0;
+			cameraMatrixWriteDeferredFrag.descriptorCount = 1;
+			cameraMatrixWriteDeferredFrag.descriptorType = vk::DescriptorType::eUniformBuffer;
+			cameraMatrixWriteDeferredFrag.pBufferInfo = &cameraMatrixDescriptor;
+
+			vk::WriteDescriptorSet lightWriteInfoDeferred;
+			lightWriteInfoDeferred.dstSet = fragDescSet[PipelineTypes::DEFERRED];
+			lightWriteInfoDeferred.dstBinding = 1;
+			lightWriteInfoDeferred.dstArrayElement = 0;
+			lightWriteInfoDeferred.descriptorCount = 1;
+			lightWriteInfoDeferred.descriptorType = vk::DescriptorType::eUniformBuffer;
+			lightWriteInfoDeferred.pBufferInfo = &lightBufferDescriptor;
+
+			writeOps = { camereaVectorWrite, cameraMatrixWrite, modelWriteInfo, lightWriteInfo, cameraMatrixWritePrepass, modelWriteInfoPrepass, lightWriteInfoDeferred, cameraMatrixWriteDeferredFrag };
 		}
 
 		void SwapChainFrame::writeDescriptorSets() {
@@ -142,7 +196,7 @@ namespace vkUtilities {
 
 		void SwapChainFrame::createAlbedoBuffer() {
 			vk::Format albedoBufferFormat = vkImage::findSupportedFormat(physicalDevice,
-				{ vk::Format::eB8G8R8A8Unorm },
+				{ vk::Format::eR8G8B8A8Unorm },
 				vk::ImageTiling::eOptimal,
 				vk::FormatFeatureFlagBits::eColorAttachment);
 
@@ -150,7 +204,7 @@ namespace vkUtilities {
 			imageInfo.device = device;
 			imageInfo.physicalDevice = physicalDevice;
 			imageInfo.tiling = vk::ImageTiling::eOptimal;
-			imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment;
+			imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
 			imageInfo.memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
 			imageInfo.width = width;
 			imageInfo.height = height;
@@ -163,7 +217,7 @@ namespace vkUtilities {
 		void SwapChainFrame::createNormalBuffer() {
 			// TODO: this format might absolutely destroy our values. f in the chat
 			vk::Format normalBufferFormat = vkImage::findSupportedFormat(physicalDevice,
-				{ vk::Format::eB8G8R8A8Unorm },
+				{ vk::Format::eR16G16B16A16Sfloat },
 				vk::ImageTiling::eOptimal,
 				vk::FormatFeatureFlagBits::eColorAttachment);
 
@@ -171,7 +225,7 @@ namespace vkUtilities {
 			imageInfo.device = device;
 			imageInfo.physicalDevice = physicalDevice;
 			imageInfo.tiling = vk::ImageTiling::eOptimal;
-			imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment;
+			imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
 			imageInfo.memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
 			imageInfo.width = width;
 			imageInfo.height = height;
@@ -181,6 +235,28 @@ namespace vkUtilities {
 			createImageResources(imageInfo, vk::ImageAspectFlagBits::eColor, normalBuffer, normalBufferMemory, normalBufferView);
 		}
 
+		void SwapChainFrame::createPositionBuffer() {
+			// TODO: this format might absolutely destroy our values. f in the chat
+			vk::Format normalBufferFormat = vkImage::findSupportedFormat(physicalDevice,
+				{ vk::Format::eR16G16B16A16Sfloat },
+				vk::ImageTiling::eOptimal,
+				vk::FormatFeatureFlagBits::eColorAttachment);
+
+			vkImage::ImageInput imageInfo;
+			imageInfo.device = device;
+			imageInfo.physicalDevice = physicalDevice;
+			imageInfo.tiling = vk::ImageTiling::eOptimal;
+			imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+			imageInfo.memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+			imageInfo.width = width;
+			imageInfo.height = height;
+			imageInfo.format = normalBufferFormat;
+			imageInfo.arrayCount = 1;
+
+			createImageResources(imageInfo, vk::ImageAspectFlagBits::eColor, positionBuffer, positionBufferMemory, positionBufferView);
+		}
+
+		// Invalid formats
 		void SwapChainFrame::createImageResources(vkImage::ImageInput imageInput, vk::ImageAspectFlagBits flags, vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView) {
 			image = vkImage::makeImage(imageInput);
 			memory = vkImage::makeImageMemory(imageInput, image);
@@ -201,10 +277,17 @@ namespace vkUtilities {
 			device.destroyImage(albedoBuffer);
 			device.freeMemory(albedoBufferMemory);
 			device.destroyImageView(albedoBufferView);
+			albedoTexture.destroySampler();
 
 			device.destroyImage(normalBuffer);
 			device.freeMemory(normalBufferMemory);
 			device.destroyImageView(normalBufferView);
+			normalTexture.destroySampler();
+
+			device.destroyImage(positionBuffer);
+			device.freeMemory(positionBufferMemory);
+			device.destroyImageView(positionBufferView);
+			positionTexture.destroySampler();
 
 			device.destroyImage(depthBuffer);
 			device.freeMemory(depthBufferMemory);
@@ -214,8 +297,10 @@ namespace vkUtilities {
 			// TODO: Better cleanup
 			device.destroyFramebuffer(frameBuffer[PipelineTypes::FORWARD]);
 			device.destroyFramebuffer(frameBuffer[PipelineTypes::SKY]);
+			device.destroyFramebuffer(frameBuffer[PipelineTypes::PREPASS]);
 			device.destroyFramebuffer(frameBuffer[PipelineTypes::DEFERRED]);
 			device.destroyFence(inFlightFence);
+			device.destroyFence(prepassFence);
 			device.destroySemaphore(renderSemaphore);
 			device.destroySemaphore(presentSemaphore);
 

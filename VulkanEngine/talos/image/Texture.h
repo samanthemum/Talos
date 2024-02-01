@@ -11,9 +11,13 @@ namespace vkImage {
 
 		void load(TextureInput texInput);
 
-		~Texture();
+		void load(TextureInput input, vk::ImageView imageView);
 
 		void use(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout, uint32_t set);
+
+		void destroyImage();
+
+		void destroySampler();
 
 	private:
 		int width, height, channels;
@@ -46,6 +50,6 @@ namespace vkImage {
 		void populate();
 		void makeView();
 		void makeSampler();
-		void makeDescriptorSet();
+		void makeDescriptorSet(uint32_t binding, uint32_t bindingCount = 1);
 	};
 }

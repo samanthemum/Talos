@@ -14,5 +14,7 @@ namespace vkInit {
 		vk::Extent2D size;
 		vk::VertexInputBindingDescription vertexBindingDescription;
 		std::vector<vk::VertexInputAttributeDescription> vertexAttributeDescription{};
+		vk::ImageLayout imageInitialLayout;
+		vk::ImageLayout imageFinalLayout;
 	};
 }

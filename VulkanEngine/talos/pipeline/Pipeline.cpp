@@ -126,18 +126,12 @@ namespace vkInit {
 		);
 	}
 
-	void PipelineBuilder::addColorAttachment(const vk::Format& format, uint32_t attachment_index) {
+	void PipelineBuilder::addColorAttachment(const vk::Format& format, uint32_t attachment_index, vk::ImageLayout initialLayout, vk::ImageLayout finalLayout) {
 		vk::AttachmentLoadOp loadOp = vk::AttachmentLoadOp::eDontCare;
-		if (!shouldClearColorBuffer) {
+		if (initialLayout == vk::ImageLayout::ePresentSrcKHR) {
 			loadOp = vk::AttachmentLoadOp::eLoad;
 		}
-
 		vk::AttachmentStoreOp storeOp = vk::AttachmentStoreOp::eStore;
-		vk::ImageLayout initialLayout = vk::ImageLayout::eUndefined;
-		if (!shouldClearColorBuffer) {
-			initialLayout = vk::ImageLayout::ePresentSrcKHR;
-		}
-		vk::ImageLayout finalLayout = vk::ImageLayout::ePresentSrcKHR;
 
 		attachmentDescriptions.insert(
 			{ attachment_index,

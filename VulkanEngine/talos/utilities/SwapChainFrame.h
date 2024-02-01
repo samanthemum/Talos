@@ -3,6 +3,8 @@
 #include "Memory.h"
 #include "../image/Image.h"
 #include "../gameobjects/Light.h"
+#include "../pipeline/Descriptors.h"
+#include "../image/Texture.h"
 
 namespace vkUtilities {
 
@@ -45,10 +47,17 @@ namespace vkUtilities {
 		vk::Image albedoBuffer;
 		vk::DeviceMemory albedoBufferMemory;
 		vk::ImageView albedoBufferView;
+		vkImage::Texture albedoTexture;
 
 		vk::Image normalBuffer;
 		vk::DeviceMemory normalBufferMemory;
 		vk::ImageView normalBufferView;
+		vkImage::Texture normalTexture;
+
+		vk::Image positionBuffer;
+		vk::DeviceMemory positionBufferMemory;
+		vk::ImageView positionBufferView;
+		vkImage::Texture positionTexture;
 
 		int width, height;
 
@@ -58,6 +67,7 @@ namespace vkUtilities {
 
 		// Sync Resources
 		vk::Fence inFlightFence;
+		vk::Fence prepassFence;
 		vk::Semaphore renderSemaphore;
 		vk::Semaphore presentSemaphore;
 
@@ -88,10 +98,15 @@ namespace vkUtilities {
 		std::unordered_map<PipelineTypes, vk::DescriptorSet> vertexDescSet;
 		std::unordered_map<PipelineTypes, vk::DescriptorSet> fragDescSet;
 
+		// Descriptor sets for buffers
+		vk::DescriptorSet prepassBufferDescriptorSet;
+
 		// Write Info
 		std::vector<vk::WriteDescriptorSet> writeOps;
 
 		void createDescriptorResources();
+
+		void createPrepassBufferTextures(vk::DescriptorPool& descPool, vk::DescriptorSetLayout& layout);
 	
 		void createDescriptorSets();
 
@@ -102,6 +117,8 @@ namespace vkUtilities {
 		void createAlbedoBuffer();
 
 		void createNormalBuffer();
+
+		void createPositionBuffer();
 
 		void createImageResources(vkImage::ImageInput imageInput, vk::ImageAspectFlagBits flags, vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView);
 

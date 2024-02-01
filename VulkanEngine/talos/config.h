@@ -34,6 +34,7 @@ struct Buffer {
 enum class PipelineTypes {
 	SKY,
 	FORWARD,
+	PREPASS,
 	DEFERRED
 };
 

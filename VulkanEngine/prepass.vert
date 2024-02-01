@@ -23,14 +23,14 @@ layout(location = 1) out vec3 fragKd;
 layout(location = 2) out vec3 fragKs;
 layout(location = 3) out float fragE;
 layout(location = 4) out vec2 fragTexCoord;
-layout(location = 5) out vec3 fragPosCameraSpace;
-layout(location = 6) out vec3 fragNormalCameraSpace;
+layout(location = 5) out vec3 fragPosWorldSpace;
+layout(location = 6) out vec3 fragNormalWorldSpace;
 
 void main()
 {
 	gl_Position = cameraData.viewProjection * ObjectData.model[gl_InstanceIndex] * vec4(vertexPosition, 1.0);
-	fragPosCameraSpace = vec3(cameraData.view * (ObjectData.model[gl_InstanceIndex] * vec4(vertexPosition, 1.0)));
-	fragNormalCameraSpace = vec3(transpose(inverse(cameraData.view * ObjectData.model[gl_InstanceIndex])) * vec4(vertexNormal, 0.0));
+	fragPosWorldSpace = vec3(ObjectData.model[gl_InstanceIndex] * vec4(vertexPosition, 1.0));
+	fragNormalWorldSpace = normalize(vec3(transpose(inverse(ObjectData.model[gl_InstanceIndex])) * vec4(vertexNormal, 0.0)));
 	fragKa = vertexKa;
 	fragKd = vertexKd;
 	fragKs = vertexKs;

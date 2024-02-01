@@ -13,7 +13,7 @@ namespace vkInit {
 		// Sky
 		for (int i = 0; i < frames.size(); i++) {
 			std::vector<vk::ImageView> attachments = {
-				frames[i].imageView,
+				frames[i].albedoBufferView,
 			};
 
 			vk::FramebufferCreateInfo framebufferInfo = {};
@@ -61,11 +61,39 @@ namespace vkInit {
 			}
 		}
 
-		// Deferred
+		// Prepass
 		for (int i = 0; i < frames.size(); i++) {
 			std::vector<vk::ImageView> attachments = {
 				frames[i].albedoBufferView,
 				frames[i].normalBufferView,
+				frames[i].positionBufferView,
+				frames[i].depthBufferView
+			};
+
+			vk::FramebufferCreateInfo framebufferInfo = {};
+			framebufferInfo.flags = vk::FramebufferCreateFlags();
+			framebufferInfo.renderPass = fbInput.renderpass[PipelineTypes::PREPASS];
+			framebufferInfo.attachmentCount = attachments.size();
+			framebufferInfo.pAttachments = attachments.data();
+			framebufferInfo.width = fbInput.swapChainExtent.width;
+			framebufferInfo.height = fbInput.swapChainExtent.height;
+			framebufferInfo.layers = 1;
+
+			try {
+				frames[i].frameBuffer[PipelineTypes::PREPASS] = fbInput.device.createFramebuffer(framebufferInfo);
+			}
+			catch (vk::SystemError err) {
+				if (debug) {
+					std::cout << "Failed to create frame buffer for frame " << i << std::endl;
+				}
+			}
+		}
+
+
+		// Deferred
+		for (int i = 0; i < frames.size(); i++) {
+			std::vector<vk::ImageView> attachments = {
+				frames[i].imageView,
 				frames[i].depthBufferView
 			};
 

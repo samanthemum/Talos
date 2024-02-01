@@ -132,6 +132,7 @@ void Engine::createSwapchain() {
 
 		frame.createAlbedoBuffer();
 		frame.createNormalBuffer();
+		frame.createPositionBuffer();
 	}
 }
 
@@ -144,6 +145,8 @@ void Engine::destroySwapchain() {
 
 	device.destroyDescriptorPool(frameVertexDescPool);
 	device.destroyDescriptorPool(frameFragmentDescPool);
+	device.destroyDescriptorPool(frameFragmentDescPoolDeferred);
+	device.destroyDescriptorPool(frameVertexDescPoolDeferred);
 }
 
 void Engine::recreateSwapchain() {
@@ -190,19 +193,25 @@ void Engine::createDescriptorSetLayouts()  {
 	bindings.counts.push_back(1);
 	bindings.shaderStages.push_back(vk::ShaderStageFlagBits::eVertex);
 	vertexDescLayout[PipelineTypes::FORWARD] = vkInit::makeDescriptorSetLayout(device, bindings);
-	vertexDescLayout[PipelineTypes::DEFERRED] = vkInit::makeDescriptorSetLayout(device, bindings);
+	vertexDescLayout[PipelineTypes::PREPASS] = vkInit::makeDescriptorSetLayout(device, bindings);
 
 	// Fragment shader descriptor bindings
 	// TODO: Split between this and mesh bindings seems super duper arbitrary???
 	vkInit::DescriptorSetLayoutData fragmentBindings;
 	fragmentBindings.count = 1;
-
 	fragmentBindings.indices.push_back(0);
 	fragmentBindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 	fragmentBindings.counts.push_back(1);
 	fragmentBindings.shaderStages.push_back(vk::ShaderStageFlagBits::eFragment);
-
 	fragmentDescLayout[PipelineTypes::FORWARD] = vkInit::makeDescriptorSetLayout(device, fragmentBindings);
+
+	// Need a second one for deferred
+	fragmentBindings.count = 2;
+	fragmentBindings.indices.push_back(1);
+	fragmentBindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	fragmentBindings.counts.push_back(1);
+	fragmentBindings.shaderStages.push_back(vk::ShaderStageFlagBits::eFragment);
+	fragmentDescLayout[PipelineTypes::DEFERRED] = vkInit::makeDescriptorSetLayout(device, fragmentBindings);
 
 	vkInit::DescriptorSetLayoutData meshBindings;
 	meshBindings.count = 1;
@@ -213,8 +222,20 @@ void Engine::createDescriptorSetLayouts()  {
 
 	// TODO: Figure out a better way to do this
 	meshDescLayout[PipelineTypes::FORWARD] = vkInit::makeDescriptorSetLayout(device, meshBindings);
-	meshDescLayout[PipelineTypes::DEFERRED] = vkInit::makeDescriptorSetLayout(device, meshBindings);
+	meshDescLayout[PipelineTypes::PREPASS] = vkInit::makeDescriptorSetLayout(device, meshBindings);
 	meshDescLayout[PipelineTypes::SKY] = vkInit::makeDescriptorSetLayout(device, meshBindings);
+
+	// Need 3 samplers for deferred lol
+	meshBindings.count = 3;
+	meshBindings.indices.push_back(1);
+	meshBindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
+	meshBindings.shaderStages.push_back(vk::ShaderStageFlagBits::eFragment);
+	meshBindings.counts.push_back(1);
+	meshBindings.indices.push_back(2);
+	meshBindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
+	meshBindings.counts.push_back(1);
+	meshBindings.shaderStages.push_back(vk::ShaderStageFlagBits::eFragment);
+	meshDescLayout[PipelineTypes::DEFERRED] = vkInit::makeDescriptorSetLayout(device, meshBindings);
 }
 
 void Engine::setupPipeline() {
@@ -229,8 +250,10 @@ void Engine::setupPipeline() {
 	pipelineInput.fragmentShaderLocation = "Shaders/sky_frag.spv";
 	pipelineInput.shouldClearDepthAttachment = true;
 	pipelineInput.size = swapChainExtent;
-	pipelineInput.formats = { swapChainFormat };
+	pipelineInput.formats = { vk::Format::eR8G8B8A8Unorm };
 	pipelineInput.pipelineType = PipelineTypes::SKY;
+	pipelineInput.imageInitialLayout = vk::ImageLayout::eUndefined;
+	pipelineInput.imageFinalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	
 	addPipeline(pipelineBuilder, pipelineInput);
 
@@ -242,19 +265,39 @@ void Engine::setupPipeline() {
 	pipelineInput.fragmentShaderLocation = "Shaders/frag.spv";
 	pipelineInput.shouldClearDepthAttachment = false;
 	pipelineInput.depthFormat = swapChainFrames[0].depthBufferFormat;
+	pipelineInput.formats = { swapChainFormat };
 	// TODO: These lines have to change for use with the deferred pass
 	pipelineInput.vertexAttributeDescription = vkMesh::getPosColorAttributeDescriptions();
 	pipelineInput.vertexBindingDescription = vkMesh::getPosColorBindingDescription();
+	pipelineInput.imageInitialLayout = vk::ImageLayout::ePresentSrcKHR;
+	pipelineInput.imageFinalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+	addPipeline(pipelineBuilder, pipelineInput);
+
+	// Prepass
+	pipelineInput.pipelineType = PipelineTypes::PREPASS;
+	pipelineInput.vertexShaderLocation = "Shaders/prepass_vert.spv";
+	pipelineInput.fragmentShaderLocation = "Shaders/prepass_frag.spv";
+	pipelineInput.formats = { vk::Format::eR8G8B8A8Unorm,  vk::Format::eR16G16B16A16Sfloat,  vk::Format::eR16G16B16A16Sfloat};
+	pipelineInput.vertexAttributeDescription = vkMesh::getPosColorAttributeDescriptions();
+	pipelineInput.vertexBindingDescription = vkMesh::getPosColorBindingDescription();
+	pipelineInput.imageInitialLayout = vk::ImageLayout::eUndefined;
+	pipelineInput.imageFinalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
 	addPipeline(pipelineBuilder, pipelineInput);
 
 	// Deferred
 	pipelineInput.pipelineType = PipelineTypes::DEFERRED;
-	pipelineInput.vertexShaderLocation = "Shaders/prepass_vert.spv";
-	pipelineInput.fragmentShaderLocation = "Shaders/prepass_frag.spv";
-	pipelineInput.formats = { swapChainFormat, swapChainFormat };
-	pipelineInput.vertexAttributeDescription = vkMesh::getPosColorAttributeDescriptions();
-	pipelineInput.vertexBindingDescription = vkMesh::getPosColorBindingDescription();
+	pipelineInput.depthTest = true;
+	pipelineInput.shouldOverWriteColor = false;
+	pipelineInput.vertexShaderLocation = "Shaders/deferred_vert.spv";
+	pipelineInput.fragmentShaderLocation = "Shaders/deferred_frag.spv";
+	pipelineInput.shouldClearDepthAttachment = false;
+	pipelineInput.formats = { swapChainFormat };
+	pipelineInput.depthFormat = swapChainFrames[0].depthBufferFormat;
+	pipelineInput.imageInitialLayout = vk::ImageLayout::eUndefined;
+	pipelineInput.imageFinalLayout = vk::ImageLayout::ePresentSrcKHR;
+	pipelineInput.vertexAttributeDescription = {};
 
 	addPipeline(pipelineBuilder, pipelineInput);
 }
@@ -284,7 +327,7 @@ void Engine::addPipeline(vkInit::PipelineBuilder pipelineBuilder, vkInit::Pipeli
 	}
 
 	for (int i = 0; i < pipelineInput.formats.size(); i++) {
-		pipelineBuilder.addColorAttachment(swapChainFormat, i);
+		pipelineBuilder.addColorAttachment(pipelineInput.formats[i], i, pipelineInput.imageInitialLayout, pipelineInput.imageFinalLayout);
 	}
 
 	pipelineBuilder.setDepthTest(pipelineInput.depthTest);
@@ -310,27 +353,49 @@ void Engine::createFrameBuffers() {
 void Engine::createFrameResources() {
 
 	// TODO: lol rename these to be more about the descriptors they contain lmao
-	vkInit::DescriptorSetLayoutData vertexBindings;
-	vertexBindings.count = 2;
-	vertexBindings.types.push_back(vk::DescriptorType::eUniformBuffer);
-	vertexBindings.types.push_back(vk::DescriptorType::eStorageBuffer);
-	frameVertexDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(swapChainFrames.size() * 2), vertexBindings);
+	vkInit::DescriptorSetLayoutData vertexBindingsForward;
+	vertexBindingsForward.count = 2;
+	vertexBindingsForward.types.push_back(vk::DescriptorType::eUniformBuffer);
+	vertexBindingsForward.types.push_back(vk::DescriptorType::eStorageBuffer);
+	frameVertexDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(swapChainFrames.size() * 3), vertexBindingsForward);
+
+	// TODO: Unused for now, delete later
+	vkInit::DescriptorSetLayoutData vertexBindingsDeferred;
+	vertexBindingsDeferred.count = 1;
+	vertexBindingsDeferred.types.push_back(vk::DescriptorType::eUniformBuffer);
+	// frameVertexDescPoolDeferred = vkInit::createDescriptorPool(device, static_cast<uint32_t>(swapChainFrames.size()), vertexBindingsDeferred);
 
 	vkInit::DescriptorSetLayoutData fragmentBindings;
 	fragmentBindings.count = 1;
 	fragmentBindings.types.push_back(vk::DescriptorType::eUniformBuffer);
-	frameFragmentDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(swapChainFrames.size() * 2), fragmentBindings);
+	frameFragmentDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(swapChainFrames.size()), fragmentBindings);
+
+	vkInit::DescriptorSetLayoutData fragmentBindingsDeferred;
+	fragmentBindingsDeferred.count = 2;
+	fragmentBindingsDeferred.types.push_back(vk::DescriptorType::eUniformBuffer);
+	fragmentBindingsDeferred.types.push_back(vk::DescriptorType::eUniformBuffer);
+	frameFragmentDescPoolDeferred = vkInit::createDescriptorPool(device, static_cast<uint32_t>(swapChainFrames.size()), fragmentBindingsDeferred);
 
 	for (int i = 0; i < maxFramesInFlight; i++) {
 		swapChainFrames[i].renderSemaphore = vkInit::makeSemaphore(device, debugMode);
 		swapChainFrames[i].presentSemaphore = vkInit::makeSemaphore(device, debugMode);
 		swapChainFrames[i].inFlightFence = vkInit::makeFence(device, debugMode);
+
+		// has to be reset
+		swapChainFrames[i].prepassFence = vkInit::makeFence(device, debugMode);
+		device.resetFences(1, &swapChainFrames[i].prepassFence);
 		
+		// TODO: Make this easier in the future for multiple textures
 		swapChainFrames[i].createDescriptorResources();
+		// swapChainFrames[i].createBufferDescriptorSets(meshDescPool, meshDescLayout[PipelineTypes::DEFERRED]);
 
 		swapChainFrames[i].vertexDescSet[PipelineTypes::FORWARD] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[PipelineTypes::FORWARD]);
 		swapChainFrames[i].fragDescSet[PipelineTypes::FORWARD] = vkInit::allocateDescriptorSet(device, frameFragmentDescPool, fragmentDescLayout[PipelineTypes::FORWARD]);
 		swapChainFrames[i].vertexDescSet[PipelineTypes::SKY] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[PipelineTypes::SKY]);
+
+		// by the sheer power of having you everything else breaks?
+		swapChainFrames[i].vertexDescSet[PipelineTypes::PREPASS] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[PipelineTypes::PREPASS]);
+		swapChainFrames[i].fragDescSet[PipelineTypes::DEFERRED] = vkInit::allocateDescriptorSet(device, frameFragmentDescPoolDeferred, fragmentDescLayout[PipelineTypes::DEFERRED]);
 	}
 }
 
@@ -354,6 +419,47 @@ void Engine::renderObjects(vk::CommandBuffer commandBuffer, std::string objectTy
 	textures[objectType]->use(commandBuffer, pipelineLayouts[PipelineTypes::FORWARD], 2);
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
 	startInstance += instanceCount;
+}
+
+void Engine::renderObjectsPrepass(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount) {
+	int indexCount = meshes->indexCounts.find(objectType)->second;
+	int firstIndex = meshes->firstIndices.find(objectType)->second;
+	textures[objectType]->use(commandBuffer, pipelineLayouts[PipelineTypes::PREPASS], 1);
+	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
+	startInstance += instanceCount;
+}
+
+void Engine::drawPrepass(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene) {
+
+	vk::RenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.renderPass = renderPasses[PipelineTypes::PREPASS];
+	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[PipelineTypes::PREPASS];
+	renderPassInfo.renderArea.offset.x = 0;
+	renderPassInfo.renderArea.offset.y = 0;
+	renderPassInfo.renderArea.extent = swapChainExtent;
+
+	vk::ClearValue clearColor = { std::array<float, 4>{1.0f, 0.5f, 0.25f, 1.0f} };
+	vk::ClearValue clearDepth;
+	clearDepth.depthStencil = vk::ClearDepthStencilValue({ 1.0f, 0 });
+	std::vector<vk::ClearValue> clearValues = { {clearColor, clearColor, clearColor, clearDepth} };
+	renderPassInfo.clearValueCount = clearValues.size();
+	renderPassInfo.pClearValues = clearValues.data();
+
+
+	commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::PREPASS], 0, swapChainFrames[imageIndex].vertexDescSet[PipelineTypes::PREPASS], nullptr);
+	//commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::DEFERRED], 1, swapChainFrames[imageIndex].fragDescSet[PipelineTypes::DEFERRED], nullptr);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[PipelineTypes::PREPASS]);
+
+	prepareScene(commandBuffer);
+
+	// pass in data
+	uint32_t startInstance = 0;
+	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
+		renderObjectsPrepass(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
+	}
+
+	commandBuffer.endRenderPass();
 }
 
 void Engine::drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene) {
@@ -385,6 +491,37 @@ void Engine::drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, 
 	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
 		renderObjects(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
 	}
+
+	commandBuffer.endRenderPass();
+}
+
+void Engine::drawDeferred(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene) {
+
+	vk::RenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.renderPass = renderPasses[PipelineTypes::DEFERRED];
+	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[PipelineTypes::DEFERRED];
+	renderPassInfo.renderArea.offset.x = 0;
+	renderPassInfo.renderArea.offset.y = 0;
+	renderPassInfo.renderArea.extent = swapChainExtent;
+
+	vk::ClearValue clearColor = { std::array<float, 4>{1.0f, 0.5f, 0.25f, 1.0f} };
+	vk::ClearValue clearDepth;
+	clearDepth.depthStencil = vk::ClearDepthStencilValue({ 1.0f, 0 });
+	std::vector<vk::ClearValue> clearValues = { {clearColor, clearDepth} };
+	renderPassInfo.clearValueCount = clearValues.size();
+	renderPassInfo.pClearValues = clearValues.data();
+
+
+	commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::DEFERRED], 0, swapChainFrames[imageIndex].fragDescSet[PipelineTypes::DEFERRED], nullptr);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[PipelineTypes::DEFERRED]);
+
+	// pass in data- this destroys image views... isn't that just dandy?
+	swapChainFrames[imageIndex].albedoTexture.use(commandBuffer, pipelineLayouts[PipelineTypes::DEFERRED], 1);
+	swapChainFrames[imageIndex].normalTexture.use(commandBuffer, pipelineLayouts[PipelineTypes::DEFERRED], 1);
+	swapChainFrames[imageIndex].positionTexture.use(commandBuffer, pipelineLayouts[PipelineTypes::DEFERRED], 1);
+
+	commandBuffer.draw(6, 1, 0, 0);
 
 	commandBuffer.endRenderPass();
 }
@@ -427,7 +564,6 @@ void Engine::render(Scene* scene) {
 	try {
 		vk::ResultValue acquireImageResult = device.acquireNextImageKHR(swapChain, UINT64_MAX, swapChainFrames[frameNumber].renderSemaphore, nullptr);
 		imageIndex = acquireImageResult.value;
-
 	}
 	catch (vk::OutOfDateKHRError) {
 		recreateSwapchain();
@@ -456,7 +592,58 @@ void Engine::render(Scene* scene) {
 
 	drawSky(commandBuffer, imageIndex, scene);
 
-	drawStandard(commandBuffer, imageIndex, scene);
+	drawPrepass(commandBuffer, imageIndex, scene);
+
+	commandBuffer.end();
+
+	vk::SubmitInfo prepassSubmit = {};
+	vk::Semaphore prepassWaitSemaphores[] = { swapChainFrames[frameNumber].renderSemaphore };
+	vk::PipelineStageFlags prepassWaitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	prepassSubmit.waitSemaphoreCount = 1;
+	prepassSubmit.pWaitSemaphores = prepassWaitSemaphores;
+	prepassSubmit.pWaitDstStageMask = prepassWaitStages;
+	prepassSubmit.pCommandBuffers = &commandBuffer;
+	prepassSubmit.commandBufferCount = 1;
+
+	graphicsQueue.submit(prepassSubmit, swapChainFrames[frameNumber].prepassFence);
+	device.waitForFences(1, &swapChainFrames[frameNumber].prepassFence, VK_TRUE, UINT64_MAX);
+	device.resetFences(1, &swapChainFrames[frameNumber].prepassFence);
+
+	// commandBuffer.reset();
+	// initialize draw commands
+	// restart command buffer
+	try {
+		commandBuffer.begin(beginInfo);
+	}
+	catch (vk::SystemError err) {
+		if (debugMode) {
+			std::cout << "Couldn't start the command buffer. Ending record now " << std::endl;
+		}
+
+		return;
+	}
+
+	/*
+		Setup textures from prepass
+	*/
+	vkImage::ImageLayoutTransitionInput layoutTransition;
+	layoutTransition.image = swapChainFrames[imageIndex].albedoBuffer;
+	layoutTransition.arrayCount = 1;
+	layoutTransition.commandBuffer = mainCommandBuffer;
+	layoutTransition.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	layoutTransition.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	layoutTransition.queue = graphicsQueue;
+	vkImage::transitionImageLayout(layoutTransition);
+
+	layoutTransition.image = swapChainFrames[imageIndex].normalBuffer;
+	vkImage::transitionImageLayout(layoutTransition);
+
+	layoutTransition.image = swapChainFrames[imageIndex].positionBuffer;
+	vkImage::transitionImageLayout(layoutTransition);
+
+	// drawStandard(commandBuffer, imageIndex, scene);
+
+	drawDeferred(commandBuffer, imageIndex, scene);
 
 	try {
 		commandBuffer.end();
@@ -470,11 +657,7 @@ void Engine::render(Scene* scene) {
 	}
 
 	vk::SubmitInfo submitInfo = {};
-	vk::Semaphore waitSemaphores[] = { swapChainFrames[frameNumber].renderSemaphore };
-	vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.waitSemaphoreCount = 0;
 	submitInfo.pCommandBuffers = &commandBuffer;
 	submitInfo.commandBufferCount = 1;
 	vk::Semaphore signalSemaphores[] = { swapChainFrames[frameNumber].presentSemaphore };
@@ -554,13 +737,21 @@ void Engine::makeAssets(Scene* scene) {
 	vkInit::DescriptorSetLayoutData texLayoutData;
 	texLayoutData.count = 1;
 	texLayoutData.types.push_back(vk::DescriptorType::eCombinedImageSampler);
-	meshDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(texturePaths.size() + 1), texLayoutData);
+	meshDescPool = vkInit::createDescriptorPool(device, static_cast<uint32_t>(texturePaths.size() + 1 + 3 * swapChainFrames.size()), texLayoutData);
+
+	// Allocate descriptors for the buffers
+	for (int i = 0; i < maxFramesInFlight; i++) {
+		swapChainFrames[i].createPrepassBufferTextures(meshDescPool, meshDescLayout[PipelineTypes::DEFERRED]);
+	}
 
 	std::unordered_map<std::string, vkMesh::ObjMesh> loadedMeshes;
 	for (std::pair<std::string, std::vector<std::string>> pair : modelPaths) {
 		vkMesh::ObjMesh mesh{}; 
 		loadedMeshes.emplace(pair.first, mesh);
-		workQueue.add(new vkJob::LoadModelJob(loadedMeshes[pair.first], pair.second[0], pair.second[1], glm::mat4(1.0f)));
+		// w might need to be zero
+		glm::mat4 preTransform = glm::mat4(1.0f);
+		preTransform[3][3] = 0.0f;
+		workQueue.add(new vkJob::LoadModelJob(loadedMeshes[pair.first], pair.second[0], pair.second[1], preTransform));
 	}
 
 	vkImage::TextureInput texInfo;
@@ -570,7 +761,15 @@ void Engine::makeAssets(Scene* scene) {
 	texInfo.layout = meshDescLayout[PipelineTypes::FORWARD];
 	texInfo.pool = meshDescPool;
 	texInfo.texType = vk::ImageViewType::e2D;
+	texInfo.dstBinding = 0;
 
+	/*for (const auto& [object, filename] : texturePaths) {
+		texInfo.filename = filename;
+		textures[object] = new vkImage::Texture{};
+		workQueue.add(new vkJob::LoadTextureJob(textures[object], texInfo));
+	}*/
+
+	texInfo.layout = meshDescLayout[PipelineTypes::PREPASS];
 	for (const auto& [object, filename] : texturePaths) {
 		texInfo.filename = filename;
 		textures[object] = new vkImage::Texture{};
@@ -672,11 +871,13 @@ Engine::~Engine() {
 
 	delete meshes;
 	for (const auto& [object, texture] : textures) {
-		delete texture;
+		texture->destroyImage();
+		texture->destroySampler();
 	}
 
 	if (skybox) {
-		delete skybox;
+		skybox->destroyImage();
+		skybox->destroySampler();
 	}
 
 	if (window) {
@@ -695,6 +896,9 @@ Engine::~Engine() {
 		device.destroyRenderPass(renderPasses[PipelineTypes::SKY]);
 		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::SKY]);
 		device.destroyPipeline(pipelines[PipelineTypes::SKY]);
+		device.destroyRenderPass(renderPasses[PipelineTypes::PREPASS]);
+		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::PREPASS]);
+		device.destroyPipeline(pipelines[PipelineTypes::PREPASS]);
 		device.destroyRenderPass(renderPasses[PipelineTypes::DEFERRED]);
 		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::DEFERRED]);
 		device.destroyPipeline(pipelines[PipelineTypes::DEFERRED]);
@@ -704,8 +908,10 @@ Engine::~Engine() {
 		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::FORWARD]);
 		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::SKY]);
 		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::SKY]);
-		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::DEFERRED]);
+		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::PREPASS]);
+		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::PREPASS]);
 		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::DEFERRED]);
+		device.destroyDescriptorSetLayout(fragmentDescLayout[PipelineTypes::DEFERRED]);
 		device.destroyDescriptorPool(meshDescPool);
 		device.destroy();
 	}

@@ -74,6 +74,8 @@ class Engine {
 		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> vertexDescLayout;
 		vk::DescriptorPool frameVertexDescPool;
 		vk::DescriptorPool frameFragmentDescPool;
+		vk::DescriptorPool frameVertexDescPoolDeferred;
+		vk::DescriptorPool frameFragmentDescPoolDeferred;
 		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> fragmentDescLayout;
 		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> meshDescLayout;
 		vk::DescriptorPool meshDescPool;
@@ -111,6 +113,9 @@ class Engine {
 		void prepareScene(vk::CommandBuffer commandBuffer);
 		void prepareFrame(uint32_t imageIndex, const Scene* scene);
 		void renderObjects(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount);
+		void renderObjectsPrepass(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount);
 		void drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
+		void drawPrepass(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
+		void drawDeferred(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 		void drawSky(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 };
