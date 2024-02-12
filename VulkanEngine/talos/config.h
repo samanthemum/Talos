@@ -31,11 +31,13 @@ struct Buffer {
 	vk::DeviceMemory bufferMemory;
 };
 
-enum class PipelineTypes {
+enum class RenderPassType {
 	SKY,
 	FORWARD,
 	PREPASS,
 	DEFERRED
 };
+
+std::vector<RenderPassType> getRequiredRenderPassesFromString(std::string renderPassString);
 
 std::vector<std::string> split(std::string line, std::string delimiter);

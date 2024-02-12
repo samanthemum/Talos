@@ -36,7 +36,7 @@ namespace vkUtilities {
 		// SwapChain resources
 		vk::Image image;
 		vk::ImageView imageView;
-		std::unordered_map<PipelineTypes, vk::Framebuffer> frameBuffer;
+		std::unordered_map<RenderPassType, vk::Framebuffer> frameBuffer;
 		// TODO: Make these also maps in the future?
 		vk::Image depthBuffer;
 		vk::DeviceMemory depthBufferMemory;
@@ -44,6 +44,11 @@ namespace vkUtilities {
 		vk::Format depthBufferFormat;
 
 		// G buffers
+		vk::Image prepassDepthBuffer;
+		vk::DeviceMemory prepassDepthBufferMemory;
+		vk::ImageView prepassDepthBufferView;
+		vkImage::Texture prepassDepthTexture;
+
 		vk::Image albedoBuffer;
 		vk::DeviceMemory albedoBufferMemory;
 		vk::ImageView albedoBufferView;
@@ -53,11 +58,6 @@ namespace vkUtilities {
 		vk::DeviceMemory normalBufferMemory;
 		vk::ImageView normalBufferView;
 		vkImage::Texture normalTexture;
-
-		vk::Image positionBuffer;
-		vk::DeviceMemory positionBufferMemory;
-		vk::ImageView positionBufferView;
-		vkImage::Texture positionTexture;
 
 		int width, height;
 
@@ -95,8 +95,8 @@ namespace vkUtilities {
 		vk::DescriptorBufferInfo cameraMatrixDescriptor;
 		vk::DescriptorBufferInfo modelBufferDescriptor;
 		vk::DescriptorBufferInfo lightBufferDescriptor;
-		std::unordered_map<PipelineTypes, vk::DescriptorSet> vertexDescSet;
-		std::unordered_map<PipelineTypes, vk::DescriptorSet> fragDescSet;
+		std::unordered_map<RenderPassType, vk::DescriptorSet> vertexDescSet;
+		std::unordered_map<RenderPassType, vk::DescriptorSet> fragDescSet;
 
 		// Descriptor sets for buffers
 		vk::DescriptorSet prepassBufferDescriptorSet;
@@ -117,8 +117,6 @@ namespace vkUtilities {
 		void createAlbedoBuffer();
 
 		void createNormalBuffer();
-
-		void createPositionBuffer();
 
 		void createImageResources(vkImage::ImageInput imageInput, vk::ImageAspectFlagBits flags, vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView);
 

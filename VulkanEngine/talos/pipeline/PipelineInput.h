@@ -3,7 +3,7 @@
 
 namespace vkInit {
 	struct PipelineInput {
-		PipelineTypes pipelineType;
+		RenderPassType pipelineType;
 		const char* vertexShaderLocation;
 		const char* fragmentShaderLocation;
 		bool shouldOverWriteColor = false;

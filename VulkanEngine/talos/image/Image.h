@@ -36,6 +36,7 @@ namespace vkImage {
 		vk::Image image;
 		vk::ImageLayout oldLayout, newLayout;
 		uint32_t arrayCount;
+		vk::ImageAspectFlagBits aspect = vk::ImageAspectFlagBits::eColor;
 	};
 
 	struct BufferCopyInput {

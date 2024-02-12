@@ -10,7 +10,6 @@ layout(location = 6) in vec3 fragNormalWorldSpace;
 
 layout(location = 0) out vec4 albedo;
 layout(location = 1) out vec4 normal;
-layout(location = 2) out vec4 position;
 
 layout(set = 1, binding = 0) uniform sampler2D tex;
 
@@ -24,8 +23,5 @@ void main() {
 
 	albedo = vec4(kd, 1.0f);
 	normal = vec4(fragNormalWorldSpace, 0.0);
-
-	// change this to world space
-	position = vec4(fragPosWorldSpace, 1.0);
 }
 

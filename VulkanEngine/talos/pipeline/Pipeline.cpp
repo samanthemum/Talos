@@ -116,7 +116,7 @@ namespace vkInit {
 		pipelineInfo.pDepthStencilState = &depthState;
 		attachmentDescriptions.insert(
 			{ attachment_index,
-			makeRenderpassAttachment(depthFormat, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal)
+			makeRenderpassAttachment(depthFormat, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal)
 			}
 		);
 		attachmentReferences.insert(

@@ -132,7 +132,6 @@ void Engine::createSwapchain() {
 
 		frame.createAlbedoBuffer();
 		frame.createNormalBuffer();
-		frame.createPositionBuffer();
 	}
 }
 
@@ -184,7 +183,7 @@ void Engine::createDescriptorSetLayouts()  {
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 	bindings.counts.push_back(1);
 	bindings.shaderStages.push_back(vk::ShaderStageFlagBits::eVertex);
-	vertexDescLayout[PipelineTypes::SKY] = vkInit::makeDescriptorSetLayout(device, bindings);
+	vertexDescLayout[RenderPassType::SKY] = vkInit::makeDescriptorSetLayout(device, bindings);
 
 	// NOTE: This will need to changed for the forward pass with deferred!
 	bindings.count = 2;
@@ -192,8 +191,8 @@ void Engine::createDescriptorSetLayouts()  {
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	bindings.counts.push_back(1);
 	bindings.shaderStages.push_back(vk::ShaderStageFlagBits::eVertex);
-	vertexDescLayout[PipelineTypes::FORWARD] = vkInit::makeDescriptorSetLayout(device, bindings);
-	vertexDescLayout[PipelineTypes::PREPASS] = vkInit::makeDescriptorSetLayout(device, bindings);
+	vertexDescLayout[RenderPassType::FORWARD] = vkInit::makeDescriptorSetLayout(device, bindings);
+	vertexDescLayout[RenderPassType::PREPASS] = vkInit::makeDescriptorSetLayout(device, bindings);
 
 	// Fragment shader descriptor bindings
 	// TODO: Split between this and mesh bindings seems super duper arbitrary???
@@ -203,7 +202,7 @@ void Engine::createDescriptorSetLayouts()  {
 	fragmentBindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 	fragmentBindings.counts.push_back(1);
 	fragmentBindings.shaderStages.push_back(vk::ShaderStageFlagBits::eFragment);
-	fragmentDescLayout[PipelineTypes::FORWARD] = vkInit::makeDescriptorSetLayout(device, fragmentBindings);
+	fragmentDescLayout[RenderPassType::FORWARD] = vkInit::makeDescriptorSetLayout(device, fragmentBindings);
 
 	// Need a second one for deferred
 	fragmentBindings.count = 2;
@@ -211,7 +210,7 @@ void Engine::createDescriptorSetLayouts()  {
 	fragmentBindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 	fragmentBindings.counts.push_back(1);
 	fragmentBindings.shaderStages.push_back(vk::ShaderStageFlagBits::eFragment);
-	fragmentDescLayout[PipelineTypes::DEFERRED] = vkInit::makeDescriptorSetLayout(device, fragmentBindings);
+	fragmentDescLayout[RenderPassType::DEFERRED] = vkInit::makeDescriptorSetLayout(device, fragmentBindings);
 
 	vkInit::DescriptorSetLayoutData meshBindings;
 	meshBindings.count = 1;
@@ -221,9 +220,9 @@ void Engine::createDescriptorSetLayouts()  {
 	meshBindings.shaderStages.push_back(vk::ShaderStageFlagBits::eFragment);
 
 	// TODO: Figure out a better way to do this
-	meshDescLayout[PipelineTypes::FORWARD] = vkInit::makeDescriptorSetLayout(device, meshBindings);
-	meshDescLayout[PipelineTypes::PREPASS] = vkInit::makeDescriptorSetLayout(device, meshBindings);
-	meshDescLayout[PipelineTypes::SKY] = vkInit::makeDescriptorSetLayout(device, meshBindings);
+	meshDescLayout[RenderPassType::FORWARD] = vkInit::makeDescriptorSetLayout(device, meshBindings);
+	meshDescLayout[RenderPassType::PREPASS] = vkInit::makeDescriptorSetLayout(device, meshBindings);
+	meshDescLayout[RenderPassType::SKY] = vkInit::makeDescriptorSetLayout(device, meshBindings);
 
 	// Need 3 samplers for deferred lol
 	meshBindings.count = 3;
@@ -235,7 +234,7 @@ void Engine::createDescriptorSetLayouts()  {
 	meshBindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
 	meshBindings.counts.push_back(1);
 	meshBindings.shaderStages.push_back(vk::ShaderStageFlagBits::eFragment);
-	meshDescLayout[PipelineTypes::DEFERRED] = vkInit::makeDescriptorSetLayout(device, meshBindings);
+	meshDescLayout[RenderPassType::DEFERRED] = vkInit::makeDescriptorSetLayout(device, meshBindings);
 }
 
 void Engine::setupPipeline() {
@@ -251,14 +250,14 @@ void Engine::setupPipeline() {
 	pipelineInput.shouldClearDepthAttachment = true;
 	pipelineInput.size = swapChainExtent;
 	pipelineInput.formats = { vk::Format::eR8G8B8A8Unorm };
-	pipelineInput.pipelineType = PipelineTypes::SKY;
+	pipelineInput.pipelineType = RenderPassType::SKY;
 	pipelineInput.imageInitialLayout = vk::ImageLayout::eUndefined;
 	pipelineInput.imageFinalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	
 	addPipeline(pipelineBuilder, pipelineInput);
 
 	// Forward
-	pipelineInput.pipelineType = PipelineTypes::FORWARD;
+	pipelineInput.pipelineType = RenderPassType::FORWARD;
 	pipelineInput.depthTest = true;
 	pipelineInput.shouldOverWriteColor = false;
 	pipelineInput.vertexShaderLocation = "Shaders/vert.spv";
@@ -275,10 +274,10 @@ void Engine::setupPipeline() {
 	addPipeline(pipelineBuilder, pipelineInput);
 
 	// Prepass
-	pipelineInput.pipelineType = PipelineTypes::PREPASS;
+	pipelineInput.pipelineType = RenderPassType::PREPASS;
 	pipelineInput.vertexShaderLocation = "Shaders/prepass_vert.spv";
 	pipelineInput.fragmentShaderLocation = "Shaders/prepass_frag.spv";
-	pipelineInput.formats = { vk::Format::eR8G8B8A8Unorm,  vk::Format::eR16G16B16A16Sfloat,  vk::Format::eR16G16B16A16Sfloat};
+	pipelineInput.formats = { vk::Format::eR8G8B8A8Unorm,  vk::Format::eR16G16B16A16Sfloat};
 	pipelineInput.vertexAttributeDescription = vkMesh::getPosColorAttributeDescriptions();
 	pipelineInput.vertexBindingDescription = vkMesh::getPosColorBindingDescription();
 	pipelineInput.imageInitialLayout = vk::ImageLayout::eUndefined;
@@ -287,7 +286,7 @@ void Engine::setupPipeline() {
 	addPipeline(pipelineBuilder, pipelineInput);
 
 	// Deferred
-	pipelineInput.pipelineType = PipelineTypes::DEFERRED;
+	pipelineInput.pipelineType = RenderPassType::DEFERRED;
 	pipelineInput.depthTest = true;
 	pipelineInput.shouldOverWriteColor = false;
 	pipelineInput.vertexShaderLocation = "Shaders/deferred_vert.spv";
@@ -389,13 +388,13 @@ void Engine::createFrameResources() {
 		swapChainFrames[i].createDescriptorResources();
 		// swapChainFrames[i].createBufferDescriptorSets(meshDescPool, meshDescLayout[PipelineTypes::DEFERRED]);
 
-		swapChainFrames[i].vertexDescSet[PipelineTypes::FORWARD] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[PipelineTypes::FORWARD]);
-		swapChainFrames[i].fragDescSet[PipelineTypes::FORWARD] = vkInit::allocateDescriptorSet(device, frameFragmentDescPool, fragmentDescLayout[PipelineTypes::FORWARD]);
-		swapChainFrames[i].vertexDescSet[PipelineTypes::SKY] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[PipelineTypes::SKY]);
+		swapChainFrames[i].vertexDescSet[RenderPassType::FORWARD] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[RenderPassType::FORWARD]);
+		swapChainFrames[i].fragDescSet[RenderPassType::FORWARD] = vkInit::allocateDescriptorSet(device, frameFragmentDescPool, fragmentDescLayout[RenderPassType::FORWARD]);
+		swapChainFrames[i].vertexDescSet[RenderPassType::SKY] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[RenderPassType::SKY]);
 
 		// by the sheer power of having you everything else breaks?
-		swapChainFrames[i].vertexDescSet[PipelineTypes::PREPASS] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[PipelineTypes::PREPASS]);
-		swapChainFrames[i].fragDescSet[PipelineTypes::DEFERRED] = vkInit::allocateDescriptorSet(device, frameFragmentDescPoolDeferred, fragmentDescLayout[PipelineTypes::DEFERRED]);
+		swapChainFrames[i].vertexDescSet[RenderPassType::PREPASS] = vkInit::allocateDescriptorSet(device, frameVertexDescPool, vertexDescLayout[RenderPassType::PREPASS]);
+		swapChainFrames[i].fragDescSet[RenderPassType::DEFERRED] = vkInit::allocateDescriptorSet(device, frameFragmentDescPoolDeferred, fragmentDescLayout[RenderPassType::DEFERRED]);
 	}
 }
 
@@ -416,7 +415,7 @@ void Engine::renderObjects(vk::CommandBuffer commandBuffer, std::string objectTy
 
 	int indexCount = meshes->indexCounts.find(objectType)->second;
 	int firstIndex = meshes->firstIndices.find(objectType)->second;
-	textures[objectType]->use(commandBuffer, pipelineLayouts[PipelineTypes::FORWARD], 2);
+	textures[objectType]->use(commandBuffer, pipelineLayouts[RenderPassType::FORWARD], 2);
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
 	startInstance += instanceCount;
 }
@@ -424,7 +423,7 @@ void Engine::renderObjects(vk::CommandBuffer commandBuffer, std::string objectTy
 void Engine::renderObjectsPrepass(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount) {
 	int indexCount = meshes->indexCounts.find(objectType)->second;
 	int firstIndex = meshes->firstIndices.find(objectType)->second;
-	textures[objectType]->use(commandBuffer, pipelineLayouts[PipelineTypes::PREPASS], 1);
+	textures[objectType]->use(commandBuffer, pipelineLayouts[RenderPassType::PREPASS], 1);
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
 	startInstance += instanceCount;
 }
@@ -432,8 +431,8 @@ void Engine::renderObjectsPrepass(vk::CommandBuffer commandBuffer, std::string o
 void Engine::drawPrepass(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene) {
 
 	vk::RenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.renderPass = renderPasses[PipelineTypes::PREPASS];
-	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[PipelineTypes::PREPASS];
+	renderPassInfo.renderPass = renderPasses[RenderPassType::PREPASS];
+	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[RenderPassType::PREPASS];
 	renderPassInfo.renderArea.offset.x = 0;
 	renderPassInfo.renderArea.offset.y = 0;
 	renderPassInfo.renderArea.extent = swapChainExtent;
@@ -447,16 +446,18 @@ void Engine::drawPrepass(vk::CommandBuffer commandBuffer, uint32_t imageIndex, S
 
 
 	commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::PREPASS], 0, swapChainFrames[imageIndex].vertexDescSet[PipelineTypes::PREPASS], nullptr);
-	//commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::DEFERRED], 1, swapChainFrames[imageIndex].fragDescSet[PipelineTypes::DEFERRED], nullptr);
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[PipelineTypes::PREPASS]);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[RenderPassType::PREPASS], 0, swapChainFrames[imageIndex].vertexDescSet[RenderPassType::PREPASS], nullptr);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[RenderPassType::PREPASS]);
 
 	prepareScene(commandBuffer);
 
 	// pass in data
 	uint32_t startInstance = 0;
-	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
-		renderObjectsPrepass(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
+	for (std::pair<std::string, std::vector<talos::MeshActor>> pair : scene->gameObjects) {
+		talos::MeshActor meshActor = pair.second[0];
+		if (meshActor.getStaticMesh()->renderPass == "PREPASS") {
+			renderObjectsPrepass(commandBuffer, pair.first, startInstance, pair.second.size());
+		}
 	}
 
 	commandBuffer.endRenderPass();
@@ -465,8 +466,8 @@ void Engine::drawPrepass(vk::CommandBuffer commandBuffer, uint32_t imageIndex, S
 void Engine::drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene) {
 
 	vk::RenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.renderPass = renderPasses[PipelineTypes::FORWARD];
-	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[PipelineTypes::FORWARD];
+	renderPassInfo.renderPass = renderPasses[RenderPassType::FORWARD];
+	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[RenderPassType::FORWARD];
 	renderPassInfo.renderArea.offset.x = 0;
 	renderPassInfo.renderArea.offset.y = 0;
 	renderPassInfo.renderArea.extent = swapChainExtent;
@@ -480,16 +481,19 @@ void Engine::drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, 
 
 
 	commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::FORWARD], 0, swapChainFrames[imageIndex].vertexDescSet[PipelineTypes::FORWARD], nullptr);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::FORWARD], 1, swapChainFrames[imageIndex].fragDescSet[PipelineTypes::FORWARD], nullptr);
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[PipelineTypes::FORWARD]);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[RenderPassType::FORWARD], 0, swapChainFrames[imageIndex].vertexDescSet[RenderPassType::FORWARD], nullptr);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[RenderPassType::FORWARD], 1, swapChainFrames[imageIndex].fragDescSet[RenderPassType::FORWARD], nullptr);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[RenderPassType::FORWARD]);
 
 	prepareScene(commandBuffer);
 
 	// pass in data
 	uint32_t startInstance = 0;
-	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
-		renderObjects(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
+	for (std::pair<std::string, std::vector<talos::MeshActor>> pair : scene->gameObjects) {
+		talos::MeshActor meshActor = pair.second[0];
+		if (meshActor.getStaticMesh()->renderPass == "FORWARD") {
+			renderObjectsPrepass(commandBuffer, pair.first, startInstance, pair.second.size());
+		}
 	}
 
 	commandBuffer.endRenderPass();
@@ -498,8 +502,8 @@ void Engine::drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, 
 void Engine::drawDeferred(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene) {
 
 	vk::RenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.renderPass = renderPasses[PipelineTypes::DEFERRED];
-	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[PipelineTypes::DEFERRED];
+	renderPassInfo.renderPass = renderPasses[RenderPassType::DEFERRED];
+	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[RenderPassType::DEFERRED];
 	renderPassInfo.renderArea.offset.x = 0;
 	renderPassInfo.renderArea.offset.y = 0;
 	renderPassInfo.renderArea.extent = swapChainExtent;
@@ -513,13 +517,13 @@ void Engine::drawDeferred(vk::CommandBuffer commandBuffer, uint32_t imageIndex, 
 
 
 	commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::DEFERRED], 0, swapChainFrames[imageIndex].fragDescSet[PipelineTypes::DEFERRED], nullptr);
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[PipelineTypes::DEFERRED]);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[RenderPassType::DEFERRED], 0, swapChainFrames[imageIndex].fragDescSet[RenderPassType::DEFERRED], nullptr);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[RenderPassType::DEFERRED]);
 
 	// pass in data- this destroys image views... isn't that just dandy?
-	swapChainFrames[imageIndex].albedoTexture.use(commandBuffer, pipelineLayouts[PipelineTypes::DEFERRED], 1);
-	swapChainFrames[imageIndex].normalTexture.use(commandBuffer, pipelineLayouts[PipelineTypes::DEFERRED], 1);
-	swapChainFrames[imageIndex].positionTexture.use(commandBuffer, pipelineLayouts[PipelineTypes::DEFERRED], 1);
+	swapChainFrames[imageIndex].albedoTexture.use(commandBuffer, pipelineLayouts[RenderPassType::DEFERRED], 1);
+	swapChainFrames[imageIndex].normalTexture.use(commandBuffer, pipelineLayouts[RenderPassType::DEFERRED], 1);
+	swapChainFrames[imageIndex].prepassDepthTexture.use(commandBuffer, pipelineLayouts[RenderPassType::DEFERRED], 1);
 
 	commandBuffer.draw(6, 1, 0, 0);
 
@@ -529,8 +533,8 @@ void Engine::drawDeferred(vk::CommandBuffer commandBuffer, uint32_t imageIndex, 
 void Engine::drawSky(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene) {
 
 	vk::RenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.renderPass = renderPasses[PipelineTypes::SKY];
-	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[PipelineTypes::SKY];
+	renderPassInfo.renderPass = renderPasses[RenderPassType::SKY];
+	renderPassInfo.framebuffer = swapChainFrames[imageIndex].frameBuffer[RenderPassType::SKY];
 	renderPassInfo.renderArea.offset.x = 0;
 	renderPassInfo.renderArea.offset.y = 0;
 	renderPassInfo.renderArea.extent = swapChainExtent;
@@ -542,10 +546,10 @@ void Engine::drawSky(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene
 
 
 	commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[PipelineTypes::SKY]);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[PipelineTypes::SKY], 0, swapChainFrames[imageIndex].vertexDescSet[PipelineTypes::SKY], nullptr);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[RenderPassType::SKY]);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayouts[RenderPassType::SKY], 0, swapChainFrames[imageIndex].vertexDescSet[RenderPassType::SKY], nullptr);
 
-	skybox->use(commandBuffer, pipelineLayouts[PipelineTypes::SKY], 1);
+	skybox->use(commandBuffer, pipelineLayouts[RenderPassType::SKY], 1);
 	commandBuffer.draw(6, 1, 0, 0);
 	commandBuffer.endRenderPass();
 
@@ -590,15 +594,19 @@ void Engine::render(Scene* scene) {
 		return;
 	}
 
-	drawSky(commandBuffer, imageIndex, scene);
-
-	drawPrepass(commandBuffer, imageIndex, scene);
+	if (scene->isPassRequired(RenderPassType::SKY)) {
+		drawSky(commandBuffer, imageIndex, scene);
+	}
+	
+	if (scene->isPassRequired(RenderPassType::PREPASS)) {
+		drawPrepass(commandBuffer, imageIndex, scene);
+	}
 
 	commandBuffer.end();
 
 	vk::SubmitInfo prepassSubmit = {};
 	vk::Semaphore prepassWaitSemaphores[] = { swapChainFrames[frameNumber].renderSemaphore };
-	vk::PipelineStageFlags prepassWaitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	vk::PipelineStageFlags prepassWaitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eAllGraphics };
 	prepassSubmit.waitSemaphoreCount = 1;
 	prepassSubmit.pWaitSemaphores = prepassWaitSemaphores;
 	prepassSubmit.pWaitDstStageMask = prepassWaitStages;
@@ -638,12 +646,18 @@ void Engine::render(Scene* scene) {
 	layoutTransition.image = swapChainFrames[imageIndex].normalBuffer;
 	vkImage::transitionImageLayout(layoutTransition);
 
-	layoutTransition.image = swapChainFrames[imageIndex].positionBuffer;
+	layoutTransition.image = swapChainFrames[imageIndex].prepassDepthBuffer;
+	layoutTransition.oldLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+	layoutTransition.aspect = vk::ImageAspectFlagBits::eDepth;
 	vkImage::transitionImageLayout(layoutTransition);
 
-	// drawStandard(commandBuffer, imageIndex, scene);
-
-	drawDeferred(commandBuffer, imageIndex, scene);
+	if (scene->isPassRequired(RenderPassType::FORWARD)) {
+		drawStandard(commandBuffer, imageIndex, scene);
+	}
+	
+	if (scene->isPassRequired(RenderPassType::DEFERRED)) {
+		drawDeferred(commandBuffer, imageIndex, scene);
+	}
 
 	try {
 		commandBuffer.end();
@@ -741,7 +755,7 @@ void Engine::makeAssets(Scene* scene) {
 
 	// Allocate descriptors for the buffers
 	for (int i = 0; i < maxFramesInFlight; i++) {
-		swapChainFrames[i].createPrepassBufferTextures(meshDescPool, meshDescLayout[PipelineTypes::DEFERRED]);
+		swapChainFrames[i].createPrepassBufferTextures(meshDescPool, meshDescLayout[RenderPassType::DEFERRED]);
 	}
 
 	std::unordered_map<std::string, vkMesh::ObjMesh> loadedMeshes;
@@ -758,7 +772,7 @@ void Engine::makeAssets(Scene* scene) {
 
 	texInfo.device = device;
 	texInfo.physicalDevice = physicalDevice;
-	texInfo.layout = meshDescLayout[PipelineTypes::FORWARD];
+	texInfo.layout = meshDescLayout[RenderPassType::FORWARD];
 	texInfo.pool = meshDescPool;
 	texInfo.texType = vk::ImageViewType::e2D;
 	texInfo.dstBinding = 0;
@@ -769,7 +783,7 @@ void Engine::makeAssets(Scene* scene) {
 		workQueue.add(new vkJob::LoadTextureJob(textures[object], texInfo));
 	}*/
 
-	texInfo.layout = meshDescLayout[PipelineTypes::PREPASS];
+	texInfo.layout = meshDescLayout[RenderPassType::PREPASS];
 	for (const auto& [object, filename] : texturePaths) {
 		texInfo.filename = filename;
 		textures[object] = new vkImage::Texture{};
@@ -783,7 +797,7 @@ void Engine::makeAssets(Scene* scene) {
 		std::unordered_map<std::string, std::vector<std::string>> skyboxPaths = talos::util::getAssetDependencies(skyboxPath.c_str(), debugMode);
 		texInfo.commandBuffer = mainCommandBuffer;
 		texInfo.queue = graphicsQueue;
-		texInfo.layout = meshDescLayout[PipelineTypes::SKY];
+		texInfo.layout = meshDescLayout[RenderPassType::SKY];
 		texInfo.texType = vk::ImageViewType::eCube;
 		texInfo.filename = skyboxPaths.at("texture");
 		skybox = new vkImage::Texture{};
@@ -802,8 +816,6 @@ void Engine::makeAssets(Scene* scene) {
 	input.queue = graphicsQueue;
 	input.commandBuffer = mainCommandBuffer;
 	meshes->finalize(input);
-
-
 }
 
 void Engine::prepareFrame(uint32_t imageIndex, const Scene* scene) {
@@ -835,9 +847,9 @@ void Engine::prepareFrame(uint32_t imageIndex, const Scene* scene) {
 	memcpy(frame.cameraMatrixWriteLocation, &(frame.cameraMatrixData), sizeof(vkUtilities::CameraMatrices));
 
 	size_t i = 0;
-	for (std::pair<std::string, std::vector<glm::vec3>> pair : scene->gameObjects) {
-		for (glm::vec3& position : pair.second) {
-			frame.modelTransforms[i] = glm::translate(glm::mat4(1.0f), position);
+	for (std::pair<std::string, std::vector<talos::MeshActor>> pair : scene->gameObjects) {
+		for (talos::MeshActor& meshActor : pair.second) {
+			frame.modelTransforms[i] = glm::translate(glm::mat4(1.0f), meshActor.getTransform()->position);
 			i++;
 		}
 	}
@@ -890,28 +902,28 @@ Engine::~Engine() {
 
 	if (device) {
 		device.destroyCommandPool(commandPool);
-		device.destroyRenderPass(renderPasses[PipelineTypes::FORWARD]);
-		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::FORWARD]);
-		device.destroyPipeline(pipelines[PipelineTypes::FORWARD]);
-		device.destroyRenderPass(renderPasses[PipelineTypes::SKY]);
-		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::SKY]);
-		device.destroyPipeline(pipelines[PipelineTypes::SKY]);
-		device.destroyRenderPass(renderPasses[PipelineTypes::PREPASS]);
-		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::PREPASS]);
-		device.destroyPipeline(pipelines[PipelineTypes::PREPASS]);
-		device.destroyRenderPass(renderPasses[PipelineTypes::DEFERRED]);
-		device.destroyPipelineLayout(pipelineLayouts[PipelineTypes::DEFERRED]);
-		device.destroyPipeline(pipelines[PipelineTypes::DEFERRED]);
+		device.destroyRenderPass(renderPasses[RenderPassType::FORWARD]);
+		device.destroyPipelineLayout(pipelineLayouts[RenderPassType::FORWARD]);
+		device.destroyPipeline(pipelines[RenderPassType::FORWARD]);
+		device.destroyRenderPass(renderPasses[RenderPassType::SKY]);
+		device.destroyPipelineLayout(pipelineLayouts[RenderPassType::SKY]);
+		device.destroyPipeline(pipelines[RenderPassType::SKY]);
+		device.destroyRenderPass(renderPasses[RenderPassType::PREPASS]);
+		device.destroyPipelineLayout(pipelineLayouts[RenderPassType::PREPASS]);
+		device.destroyPipeline(pipelines[RenderPassType::PREPASS]);
+		device.destroyRenderPass(renderPasses[RenderPassType::DEFERRED]);
+		device.destroyPipelineLayout(pipelineLayouts[RenderPassType::DEFERRED]);
+		device.destroyPipeline(pipelines[RenderPassType::DEFERRED]);
 		destroySwapchain();
-		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::FORWARD]);
-		device.destroyDescriptorSetLayout(fragmentDescLayout[PipelineTypes::FORWARD]);
-		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::FORWARD]);
-		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::SKY]);
-		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::SKY]);
-		device.destroyDescriptorSetLayout(vertexDescLayout[PipelineTypes::PREPASS]);
-		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::PREPASS]);
-		device.destroyDescriptorSetLayout(meshDescLayout[PipelineTypes::DEFERRED]);
-		device.destroyDescriptorSetLayout(fragmentDescLayout[PipelineTypes::DEFERRED]);
+		device.destroyDescriptorSetLayout(vertexDescLayout[RenderPassType::FORWARD]);
+		device.destroyDescriptorSetLayout(fragmentDescLayout[RenderPassType::FORWARD]);
+		device.destroyDescriptorSetLayout(meshDescLayout[RenderPassType::FORWARD]);
+		device.destroyDescriptorSetLayout(vertexDescLayout[RenderPassType::SKY]);
+		device.destroyDescriptorSetLayout(meshDescLayout[RenderPassType::SKY]);
+		device.destroyDescriptorSetLayout(vertexDescLayout[RenderPassType::PREPASS]);
+		device.destroyDescriptorSetLayout(meshDescLayout[RenderPassType::PREPASS]);
+		device.destroyDescriptorSetLayout(meshDescLayout[RenderPassType::DEFERRED]);
+		device.destroyDescriptorSetLayout(fragmentDescLayout[RenderPassType::DEFERRED]);
 		device.destroyDescriptorPool(meshDescPool);
 		device.destroy();
 	}

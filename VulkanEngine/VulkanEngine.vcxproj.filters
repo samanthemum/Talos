@@ -66,6 +66,9 @@
     <ClCompile Include="talos\pipeline\Pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="talos\gameobjects\MeshActor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h">
@@ -156,6 +159,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="talos\pipeline\PipelineInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\gameobjects\Component.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\gameobjects\GameObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\gameobjects\Transform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\gameobjects\StaticMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="talos\gameobjects\MeshActor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

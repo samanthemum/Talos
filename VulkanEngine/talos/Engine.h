@@ -13,6 +13,7 @@
 #include "job/WorkerThread.h"
 #include "pipeline/PipelineInput.h"
 #include "pipeline/Pipeline.h"
+#include "gameobjects/MeshActor.h"
 
 class Engine {
 	public:
@@ -58,9 +59,9 @@ class Engine {
 		vk::Extent2D swapChainExtent;
 
 		// pipeline variables
-		std::unordered_map<PipelineTypes, vk::PipelineLayout> pipelineLayouts;
-		std::unordered_map<PipelineTypes, vk::RenderPass>renderPasses;
-		std::unordered_map<PipelineTypes, vk::Pipeline> pipelines;
+		std::unordered_map<RenderPassType, vk::PipelineLayout> pipelineLayouts;
+		std::unordered_map<RenderPassType, vk::RenderPass>renderPasses;
+		std::unordered_map<RenderPassType, vk::Pipeline> pipelines;
 
 		// Command related
 		vk::CommandPool commandPool;
@@ -70,14 +71,14 @@ class Engine {
 		int maxFramesInFlight, frameNumber;
 
 		// Descriptor Objects
-		std::vector<PipelineTypes> pipelineTypes = { {PipelineTypes::SKY, PipelineTypes::FORWARD} };
-		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> vertexDescLayout;
+		std::vector<RenderPassType> pipelineTypes = { {RenderPassType::SKY, RenderPassType::FORWARD} };
+		std::unordered_map<RenderPassType, vk::DescriptorSetLayout> vertexDescLayout;
 		vk::DescriptorPool frameVertexDescPool;
 		vk::DescriptorPool frameFragmentDescPool;
 		vk::DescriptorPool frameVertexDescPoolDeferred;
 		vk::DescriptorPool frameFragmentDescPoolDeferred;
-		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> fragmentDescLayout;
-		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> meshDescLayout;
+		std::unordered_map<RenderPassType, vk::DescriptorSetLayout> fragmentDescLayout;
+		std::unordered_map<RenderPassType, vk::DescriptorSetLayout> meshDescLayout;
 		vk::DescriptorPool meshDescPool;
 
 		// Available Assets

@@ -53,7 +53,7 @@ namespace vkImage {
 		vkUtilities::startJob(input.commandBuffer);
 
 		vk::ImageSubresourceRange access;
-		access.aspectMask = vk::ImageAspectFlagBits::eColor;
+		access.aspectMask = input.aspect;
 		access.baseMipLevel = 0;
 		access.levelCount = 1;
 		access.baseArrayLayer = 0;

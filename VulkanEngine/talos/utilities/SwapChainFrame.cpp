@@ -93,7 +93,7 @@ namespace vkUtilities {
 			normalTexture.load(texInput, normalBufferView);
 
 			texInput.dstBinding = 2;
-			positionTexture.load(texInput, positionBufferView);
+			prepassDepthTexture.load(texInput, prepassDepthBufferView);
 		}
 
 		// TODO: Separate into write ops and a write execution?
@@ -102,7 +102,7 @@ namespace vkUtilities {
 			
 			// TODO: Break this down into write operations in a different function
 			vk::WriteDescriptorSet camereaVectorWrite;
-			camereaVectorWrite.dstSet = vertexDescSet[PipelineTypes::SKY];
+			camereaVectorWrite.dstSet = vertexDescSet[RenderPassType::SKY];
 			camereaVectorWrite.dstBinding = 0;
 			camereaVectorWrite.dstArrayElement = 0;
 			camereaVectorWrite.descriptorCount = 1;
@@ -110,7 +110,7 @@ namespace vkUtilities {
 			camereaVectorWrite.pBufferInfo = &cameraVectorDescriptor;
 
 			vk::WriteDescriptorSet cameraMatrixWrite;
-			cameraMatrixWrite.dstSet = vertexDescSet[PipelineTypes::FORWARD];
+			cameraMatrixWrite.dstSet = vertexDescSet[RenderPassType::FORWARD];
 			cameraMatrixWrite.dstBinding = 0;
 			cameraMatrixWrite.dstArrayElement = 0;
 			cameraMatrixWrite.descriptorCount = 1;
@@ -118,7 +118,7 @@ namespace vkUtilities {
 			cameraMatrixWrite.pBufferInfo = &cameraMatrixDescriptor;
 
 			vk::WriteDescriptorSet modelWriteInfo;
-			modelWriteInfo.dstSet = vertexDescSet[PipelineTypes::FORWARD];
+			modelWriteInfo.dstSet = vertexDescSet[RenderPassType::FORWARD];
 			modelWriteInfo.dstBinding = 1;
 			modelWriteInfo.dstArrayElement = 0;
 			modelWriteInfo.descriptorCount = 1;
@@ -126,7 +126,7 @@ namespace vkUtilities {
 			modelWriteInfo.pBufferInfo = &modelBufferDescriptor;
 
 			vk::WriteDescriptorSet cameraMatrixWritePrepass;
-			cameraMatrixWritePrepass.dstSet = vertexDescSet[PipelineTypes::PREPASS];
+			cameraMatrixWritePrepass.dstSet = vertexDescSet[RenderPassType::PREPASS];
 			cameraMatrixWritePrepass.dstBinding = 0;
 			cameraMatrixWritePrepass.dstArrayElement = 0;
 			cameraMatrixWritePrepass.descriptorCount = 1;
@@ -134,7 +134,7 @@ namespace vkUtilities {
 			cameraMatrixWritePrepass.pBufferInfo = &cameraMatrixDescriptor;
 
 			vk::WriteDescriptorSet modelWriteInfoPrepass;
-			modelWriteInfoPrepass.dstSet = vertexDescSet[PipelineTypes::PREPASS];
+			modelWriteInfoPrepass.dstSet = vertexDescSet[RenderPassType::PREPASS];
 			modelWriteInfoPrepass.dstBinding = 1;
 			modelWriteInfoPrepass.dstArrayElement = 0;
 			modelWriteInfoPrepass.descriptorCount = 1;
@@ -142,7 +142,7 @@ namespace vkUtilities {
 			modelWriteInfoPrepass.pBufferInfo = &modelBufferDescriptor;
 
 			vk::WriteDescriptorSet lightWriteInfo;
-			lightWriteInfo.dstSet = fragDescSet[PipelineTypes::FORWARD];
+			lightWriteInfo.dstSet = fragDescSet[RenderPassType::FORWARD];
 			lightWriteInfo.dstBinding = 0;
 			lightWriteInfo.dstArrayElement = 0;
 			lightWriteInfo.descriptorCount = 1;
@@ -150,7 +150,7 @@ namespace vkUtilities {
 			lightWriteInfo.pBufferInfo = &lightBufferDescriptor;
 
 			vk::WriteDescriptorSet cameraMatrixWriteDeferredFrag;
-			cameraMatrixWriteDeferredFrag.dstSet = fragDescSet[PipelineTypes::DEFERRED];
+			cameraMatrixWriteDeferredFrag.dstSet = fragDescSet[RenderPassType::DEFERRED];
 			cameraMatrixWriteDeferredFrag.dstBinding = 0;
 			cameraMatrixWriteDeferredFrag.dstArrayElement = 0;
 			cameraMatrixWriteDeferredFrag.descriptorCount = 1;
@@ -158,7 +158,7 @@ namespace vkUtilities {
 			cameraMatrixWriteDeferredFrag.pBufferInfo = &cameraMatrixDescriptor;
 
 			vk::WriteDescriptorSet lightWriteInfoDeferred;
-			lightWriteInfoDeferred.dstSet = fragDescSet[PipelineTypes::DEFERRED];
+			lightWriteInfoDeferred.dstSet = fragDescSet[RenderPassType::DEFERRED];
 			lightWriteInfoDeferred.dstBinding = 1;
 			lightWriteInfoDeferred.dstArrayElement = 0;
 			lightWriteInfoDeferred.descriptorCount = 1;
@@ -184,7 +184,7 @@ namespace vkUtilities {
 			imageInfo.device = device;
 			imageInfo.physicalDevice = physicalDevice;
 			imageInfo.tiling = vk::ImageTiling::eOptimal;
-			imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+			imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
 			imageInfo.memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
 			imageInfo.width = width;
 			imageInfo.height = height;
@@ -192,6 +192,7 @@ namespace vkUtilities {
 			imageInfo.arrayCount = 1;
 
 			createImageResources(imageInfo, vk::ImageAspectFlagBits::eDepth, depthBuffer, depthBufferMemory, depthBufferView);
+			createImageResources(imageInfo, vk::ImageAspectFlagBits::eDepth, prepassDepthBuffer, prepassDepthBufferMemory, prepassDepthBufferView);
 		}
 
 		void SwapChainFrame::createAlbedoBuffer() {
@@ -235,27 +236,6 @@ namespace vkUtilities {
 			createImageResources(imageInfo, vk::ImageAspectFlagBits::eColor, normalBuffer, normalBufferMemory, normalBufferView);
 		}
 
-		void SwapChainFrame::createPositionBuffer() {
-			// TODO: this format might absolutely destroy our values. f in the chat
-			vk::Format normalBufferFormat = vkImage::findSupportedFormat(physicalDevice,
-				{ vk::Format::eR16G16B16A16Sfloat },
-				vk::ImageTiling::eOptimal,
-				vk::FormatFeatureFlagBits::eColorAttachment);
-
-			vkImage::ImageInput imageInfo;
-			imageInfo.device = device;
-			imageInfo.physicalDevice = physicalDevice;
-			imageInfo.tiling = vk::ImageTiling::eOptimal;
-			imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
-			imageInfo.memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
-			imageInfo.width = width;
-			imageInfo.height = height;
-			imageInfo.format = normalBufferFormat;
-			imageInfo.arrayCount = 1;
-
-			createImageResources(imageInfo, vk::ImageAspectFlagBits::eColor, positionBuffer, positionBufferMemory, positionBufferView);
-		}
-
 		// Invalid formats
 		void SwapChainFrame::createImageResources(vkImage::ImageInput imageInput, vk::ImageAspectFlagBits flags, vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView) {
 			image = vkImage::makeImage(imageInput);
@@ -284,10 +264,10 @@ namespace vkUtilities {
 			device.destroyImageView(normalBufferView);
 			normalTexture.destroySampler();
 
-			device.destroyImage(positionBuffer);
-			device.freeMemory(positionBufferMemory);
-			device.destroyImageView(positionBufferView);
-			positionTexture.destroySampler();
+			device.destroyImage(prepassDepthBuffer);
+			device.freeMemory(prepassDepthBufferMemory);
+			device.destroyImageView(prepassDepthBufferView);
+			prepassDepthTexture.destroySampler();
 
 			device.destroyImage(depthBuffer);
 			device.freeMemory(depthBufferMemory);
@@ -295,10 +275,10 @@ namespace vkUtilities {
 
 			device.destroyImageView(imageView);
 			// TODO: Better cleanup
-			device.destroyFramebuffer(frameBuffer[PipelineTypes::FORWARD]);
-			device.destroyFramebuffer(frameBuffer[PipelineTypes::SKY]);
-			device.destroyFramebuffer(frameBuffer[PipelineTypes::PREPASS]);
-			device.destroyFramebuffer(frameBuffer[PipelineTypes::DEFERRED]);
+			device.destroyFramebuffer(frameBuffer[RenderPassType::FORWARD]);
+			device.destroyFramebuffer(frameBuffer[RenderPassType::SKY]);
+			device.destroyFramebuffer(frameBuffer[RenderPassType::PREPASS]);
+			device.destroyFramebuffer(frameBuffer[RenderPassType::DEFERRED]);
 			device.destroyFence(inFlightFence);
 			device.destroyFence(prepassFence);
 			device.destroySemaphore(renderSemaphore);

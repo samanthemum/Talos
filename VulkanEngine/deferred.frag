@@ -18,7 +18,7 @@ layout(std140, set = 0, binding = 1) uniform LightData {
 
 layout(set = 1, binding = 0) uniform sampler2D albedoBuffer;
 layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
-layout(set = 1, binding = 2) uniform sampler2D positionBuffer;
+layout(set = 1, binding = 2) uniform sampler2D depthBuffer;
 
 void main() {
 
@@ -31,11 +31,14 @@ void main() {
 	// Convert to camera space because that's what the lights are in?
 	vec3 n = normalize(vec3(cameraData.view * texture(normalBuffer, fragTexCoord)));
 	vec3 finalColor = vec3(0.0f, 0.0f, 0.0f);
-	vec3 fragPosWorldSpace = vec3(texture(positionBuffer, fragTexCoord));
-	vec3 fragPosCameraSpace = vec3(cameraData.view * vec4(fragPosWorldSpace, 1.0f));
+	// probably needs to be linearized
+	float depth = 2.0 * texture(depthBuffer, fragTexCoord).r - 1.0;
+	vec4 clipPosition = vec4(fragTexCoord * 2.0 - 1.0, depth, 1.0);
+	vec4 fragPosCameraSpace = inverse(cameraData.projection) * clipPosition;
+	fragPosCameraSpace /= fragPosCameraSpace.w;
 	for(int i = 0; i < lighting.numLights.x; i++) {
-		vec3 lightDir = normalize(vec3(lighting.lightPositions[i]) - fragPosCameraSpace);
-		vec3 eye = normalize(vec3(0.0f, 0.0f, 0.0f) - fragPosCameraSpace);
+		vec3 lightDir = normalize(vec3(lighting.lightPositions[i]) - fragPosCameraSpace.xyz);
+		vec3 eye = normalize(vec3(0.0f, 0.0f, 0.0f) - fragPosCameraSpace.xyz);
 		vec3 h = normalize(lightDir + eye);
 
 		vec3 diffuse = kd * max(0, dot(lightDir, n));

@@ -17,3 +17,22 @@ std::vector<std::string> split(std::string line, std::string delimiter) {
 
 	return split_line;
 }
+
+std::vector<RenderPassType> getRequiredRenderPassesFromString(std::string renderPassString) {
+	std::vector<RenderPassType> requiredPasses = {};
+	if (renderPassString == "FORWARD") {
+		requiredPasses.push_back(RenderPassType::FORWARD);
+	}
+	else if (renderPassString == "PREPASS") {
+		requiredPasses.push_back(RenderPassType::PREPASS);
+		requiredPasses.push_back(RenderPassType::DEFERRED);
+	}
+	else if (renderPassString == "DEFERRED") {
+		requiredPasses.push_back(RenderPassType::DEFERRED);
+	}
+	else if (renderPassString == "SKYBOX") {
+		requiredPasses.push_back(RenderPassType::SKY);
+	}
+	
+	return requiredPasses;
+}
