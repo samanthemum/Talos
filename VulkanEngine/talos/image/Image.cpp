@@ -6,7 +6,7 @@
 #include "../utilities/SingleTimeCommands.h"
 
 namespace vkImage {
-	vk::Image makeImage(ImageInput input) {
+	vk::Image makeImage(ImageInput input, vk::ImageLayout layout) {
 		vk::ImageCreateInfo createInfo;
 		createInfo.flags = vk::ImageCreateFlagBits() | input.createFlags;
 		createInfo.imageType = vk::ImageType::e2D;
@@ -15,7 +15,7 @@ namespace vkImage {
 		createInfo.arrayLayers = input.arrayCount;
 		createInfo.format = input.format;
 		createInfo.tiling = input.tiling;
-		createInfo.initialLayout = vk::ImageLayout::eUndefined;
+		createInfo.initialLayout = layout;
 		createInfo.usage = input.usage;
 		createInfo.sharingMode = vk::SharingMode::eExclusive;
 		createInfo.samples = vk::SampleCountFlagBits::e1;
@@ -53,7 +53,7 @@ namespace vkImage {
 		vkUtilities::startJob(input.commandBuffer);
 
 		vk::ImageSubresourceRange access;
-		access.aspectMask = vk::ImageAspectFlagBits::eColor;
+		access.aspectMask = input.aspect;
 		access.baseMipLevel = 0;
 		access.levelCount = 1;
 		access.baseArrayLayer = 0;
@@ -75,6 +75,13 @@ namespace vkImage {
 
 			sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
 			dstStage = vk::PipelineStageFlagBits::eTransfer;
+		}
+		else if (input.oldLayout == vk::ImageLayout::eUndefined && input.newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+			barrier.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
+			barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+			sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
 		}
 		else {
 			barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;

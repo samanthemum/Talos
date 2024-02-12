@@ -1,3 +1,3 @@
-actor assets/cyndaquil.txt 0.0 0.0 0.0
+meshActor assets/cyndaquil.txt PREPASS 0.0 0.0 0.0
 light 0.0 10.0 0.0 1.0 1.0 1.0
 skybox assets/field_skybox.txt

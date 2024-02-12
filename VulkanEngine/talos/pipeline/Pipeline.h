@@ -46,7 +46,7 @@ namespace vkInit {
 
 			void clearDepthAttachment();
 
-			void addColorAttachment(const vk::Format& format, uint32_t attachmentIndex);
+			void addColorAttachment(const vk::Format& format, uint32_t attachment_index, vk::ImageLayout initialLayout, vk::ImageLayout finalLayout);
 
 			GraphicsPipelineOutBundle build();
 
@@ -108,7 +108,7 @@ namespace vkInit {
 
 			vk::PipelineMultisampleStateCreateInfo multisampling = {};
 
-			vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
+			std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments = {};
 			vk::PipelineColorBlendStateCreateInfo colorBlending = {};
 
 			std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;

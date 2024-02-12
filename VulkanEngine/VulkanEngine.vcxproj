@@ -152,6 +152,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="talos\config.cpp" />
     <ClCompile Include="talos\Engine.cpp" />
+    <ClCompile Include="talos\gameobjects\MeshActor.cpp" />
     <ClCompile Include="talos\gameobjects\Scene.cpp" />
     <ClCompile Include="talos\image\Image.cpp" />
     <ClCompile Include="talos\image\Texture.cpp" />
@@ -170,8 +171,13 @@
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="talos\config.h" />
     <ClInclude Include="talos\Engine.h" />
+    <ClInclude Include="talos\gameobjects\MeshActor.h" />
+    <ClInclude Include="talos\gameobjects\Component.h" />
+    <ClInclude Include="talos\gameobjects\GameObject.h" />
     <ClInclude Include="talos\gameobjects\Light.h" />
     <ClInclude Include="talos\gameobjects\Scene.h" />
+    <ClInclude Include="talos\gameobjects\StaticMesh.h" />
+    <ClInclude Include="talos\gameobjects\Transform.h" />
     <ClInclude Include="talos\image\Image.h" />
     <ClInclude Include="talos\image\Texture.h" />
     <ClInclude Include="talos\job\Job.h" />
@@ -185,6 +191,7 @@
     <ClInclude Include="talos\pipeline\Framebuffer.h" />
     <ClInclude Include="talos\pipeline\Instance.h" />
     <ClInclude Include="talos\pipeline\Pipeline.h" />
+    <ClInclude Include="talos\pipeline\PipelineInput.h" />
     <ClInclude Include="talos\pipeline\Swapchain.h" />
     <ClInclude Include="talos\pipeline\Synchronization.h" />
     <ClInclude Include="talos\utilities\FileLoader.h" />

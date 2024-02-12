@@ -23,7 +23,6 @@ namespace vkMesh {
 		for (int i = 0; i < NUM_ATTRIBUTES; i++) {
 			attributes.push_back(temp);
 		}
-		
 
 		// position
 		attributes[0].binding = 0;

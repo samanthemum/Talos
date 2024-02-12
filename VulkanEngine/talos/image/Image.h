@@ -13,6 +13,9 @@ namespace vkImage {
 		vk::DescriptorSetLayout layout;
 		vk::DescriptorPool pool;
 		vk::ImageViewType texType;
+		vk::DescriptorSet set = nullptr;
+		uint32_t descriptorCount = 1;
+		uint32_t dstBinding;
 	};
 
 	struct ImageInput {
@@ -33,6 +36,7 @@ namespace vkImage {
 		vk::Image image;
 		vk::ImageLayout oldLayout, newLayout;
 		uint32_t arrayCount;
+		vk::ImageAspectFlagBits aspect = vk::ImageAspectFlagBits::eColor;
 	};
 
 	struct BufferCopyInput {
@@ -44,7 +48,7 @@ namespace vkImage {
 		uint32_t arrayCount;
 	};
 
-	vk::Image makeImage(ImageInput input);
+	vk::Image makeImage(ImageInput input, vk::ImageLayout layout = vk::ImageLayout::eUndefined);
 	vk::DeviceMemory makeImageMemory(ImageInput input, vk::Image image);
 	void transitionImageLayout(ImageLayoutTransitionInput input);
 	void copyBufferToImage(BufferCopyInput input);

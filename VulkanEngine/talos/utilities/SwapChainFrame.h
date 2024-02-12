@@ -3,6 +3,8 @@
 #include "Memory.h"
 #include "../image/Image.h"
 #include "../gameobjects/Light.h"
+#include "../pipeline/Descriptors.h"
+#include "../image/Texture.h"
 
 namespace vkUtilities {
 
@@ -34,12 +36,29 @@ namespace vkUtilities {
 		// SwapChain resources
 		vk::Image image;
 		vk::ImageView imageView;
-		std::unordered_map<PipelineTypes, vk::Framebuffer> frameBuffer;
-		// TODO: Make these also maps in the future
+		std::unordered_map<RenderPassType, vk::Framebuffer> frameBuffer;
+		// TODO: Make these also maps in the future?
 		vk::Image depthBuffer;
 		vk::DeviceMemory depthBufferMemory;
 		vk::ImageView depthBufferView;
 		vk::Format depthBufferFormat;
+
+		// G buffers
+		vk::Image prepassDepthBuffer;
+		vk::DeviceMemory prepassDepthBufferMemory;
+		vk::ImageView prepassDepthBufferView;
+		vkImage::Texture prepassDepthTexture;
+
+		vk::Image albedoBuffer;
+		vk::DeviceMemory albedoBufferMemory;
+		vk::ImageView albedoBufferView;
+		vkImage::Texture albedoTexture;
+
+		vk::Image normalBuffer;
+		vk::DeviceMemory normalBufferMemory;
+		vk::ImageView normalBufferView;
+		vkImage::Texture normalTexture;
+
 		int width, height;
 
 
@@ -48,6 +67,7 @@ namespace vkUtilities {
 
 		// Sync Resources
 		vk::Fence inFlightFence;
+		vk::Fence prepassFence;
 		vk::Semaphore renderSemaphore;
 		vk::Semaphore presentSemaphore;
 
@@ -75,19 +95,30 @@ namespace vkUtilities {
 		vk::DescriptorBufferInfo cameraMatrixDescriptor;
 		vk::DescriptorBufferInfo modelBufferDescriptor;
 		vk::DescriptorBufferInfo lightBufferDescriptor;
-		std::unordered_map<PipelineTypes, vk::DescriptorSet> vertexDescSet;
-		std::unordered_map<PipelineTypes, vk::DescriptorSet> fragDescSet;
+		std::unordered_map<RenderPassType, vk::DescriptorSet> vertexDescSet;
+		std::unordered_map<RenderPassType, vk::DescriptorSet> fragDescSet;
+
+		// Descriptor sets for buffers
+		vk::DescriptorSet prepassBufferDescriptorSet;
 
 		// Write Info
 		std::vector<vk::WriteDescriptorSet> writeOps;
 
 		void createDescriptorResources();
+
+		void createPrepassBufferTextures(vk::DescriptorPool& descPool, vk::DescriptorSetLayout& layout);
 	
 		void createDescriptorSets();
 
 		void writeDescriptorSets();
 
 		void createDepthResources();
+
+		void createAlbedoBuffer();
+
+		void createNormalBuffer();
+
+		void createImageResources(vkImage::ImageInput imageInput, vk::ImageAspectFlagBits flags, vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView);
 
 		void updateLightInformation(const std::vector<Light>& lights);
 

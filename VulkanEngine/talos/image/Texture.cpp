@@ -5,6 +5,7 @@
 
 namespace vkImage {
 
+	// add another constructor with image already allocated
 	void Texture::load(TextureInput input) {
 		device = input.device;
 		physicalDevice = input.physicalDevice;
@@ -13,6 +14,7 @@ namespace vkImage {
 		queue = input.queue;
 		layout = input.layout;
 		descPool = input.pool;
+		descSet = input.set;
 		textureType = input.texType;
 
 		load();
@@ -42,13 +44,33 @@ namespace vkImage {
 
 		makeView();
 		makeSampler();
-		makeDescriptorSet();
+		makeDescriptorSet(input.dstBinding);
 	}
 
-	Texture::~Texture() {
-		device.freeMemory(imageMemory);
+	void Texture::load(TextureInput input, vk::ImageView imageView) {
+		device = input.device;
+		physicalDevice = input.physicalDevice;
+		commandBuffer = input.commandBuffer;
+		queue = input.queue;
+		layout = input.layout;
+		descPool = input.pool;
+		descSet = input.set;
+		textureType = input.texType;
+
+		this->imageView = imageView;
+		if (!sampler) {
+			makeSampler();
+		}
+		makeDescriptorSet(input.dstBinding, input.descriptorCount);
+	}
+
+	void Texture::destroyImage() {
 		device.destroyImage(image);
 		device.destroyImageView(imageView);
+		device.freeMemory(imageMemory);
+	}
+
+	void Texture::destroySampler() {
 		device.destroySampler(sampler);
 	}
 
@@ -159,8 +181,13 @@ namespace vkImage {
 		}
 	}
 
-	void Texture::makeDescriptorSet() {
-		descSet = vkInit::allocateDescriptorSet(device, descPool, layout);
+	// TODO: Should update with where we want to bind texture
+	void Texture::makeDescriptorSet(uint32_t binding, uint32_t bindingCount) {
+		// don't allocate a descriptor set per texture, allow this to be passed in!
+		// In reality, maybe this bad boy shouldnt ever be allocating, only updating
+		if (descSet == nullptr) {
+			descSet = vkInit::allocateDescriptorSet(device, descPool, layout);
+		}
 
 		vk::DescriptorImageInfo imageDescriptor;
 		imageDescriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -169,7 +196,7 @@ namespace vkImage {
 
 		vk::WriteDescriptorSet descriptorWrite;
 		descriptorWrite.dstSet = descSet;
-		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstBinding = binding;
 		descriptorWrite.dstArrayElement = 0;
 		descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 		descriptorWrite.descriptorCount = 1;

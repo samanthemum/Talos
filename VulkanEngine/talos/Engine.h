@@ -11,6 +11,9 @@
 #include "image/Texture.h"
 #include "job/Job.h"
 #include "job/WorkerThread.h"
+#include "pipeline/PipelineInput.h"
+#include "pipeline/Pipeline.h"
+#include "gameobjects/MeshActor.h"
 
 class Engine {
 	public:
@@ -56,9 +59,9 @@ class Engine {
 		vk::Extent2D swapChainExtent;
 
 		// pipeline variables
-		std::unordered_map<PipelineTypes, vk::PipelineLayout> pipelineLayouts;
-		std::unordered_map<PipelineTypes, vk::RenderPass>renderPasses;
-		std::unordered_map<PipelineTypes, vk::Pipeline> pipelines;
+		std::unordered_map<RenderPassType, vk::PipelineLayout> pipelineLayouts;
+		std::unordered_map<RenderPassType, vk::RenderPass>renderPasses;
+		std::unordered_map<RenderPassType, vk::Pipeline> pipelines;
 
 		// Command related
 		vk::CommandPool commandPool;
@@ -68,12 +71,14 @@ class Engine {
 		int maxFramesInFlight, frameNumber;
 
 		// Descriptor Objects
-		std::vector<PipelineTypes> pipelineTypes = { {PipelineTypes::SKY, PipelineTypes::FORWARD} };
-		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> vertexDescLayout;
+		std::vector<RenderPassType> pipelineTypes = { {RenderPassType::SKY, RenderPassType::FORWARD} };
+		std::unordered_map<RenderPassType, vk::DescriptorSetLayout> vertexDescLayout;
 		vk::DescriptorPool frameVertexDescPool;
 		vk::DescriptorPool frameFragmentDescPool;
-		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> fragmentDescLayout;
-		std::unordered_map<PipelineTypes, vk::DescriptorSetLayout> meshDescLayout;
+		vk::DescriptorPool frameVertexDescPoolDeferred;
+		vk::DescriptorPool frameFragmentDescPoolDeferred;
+		std::unordered_map<RenderPassType, vk::DescriptorSetLayout> fragmentDescLayout;
+		std::unordered_map<RenderPassType, vk::DescriptorSetLayout> meshDescLayout;
 		vk::DescriptorPool meshDescPool;
 
 		// Available Assets
@@ -96,6 +101,7 @@ class Engine {
 		// pipeline setup
 		void createDescriptorSetLayouts();
 		void setupPipeline();
+		void addPipeline(vkInit::PipelineBuilder pipelineBuilder, vkInit::PipelineInput pipelineInput);
 		
 		void finalizeSetup();
 		void createFrameBuffers();
@@ -108,6 +114,9 @@ class Engine {
 		void prepareScene(vk::CommandBuffer commandBuffer);
 		void prepareFrame(uint32_t imageIndex, const Scene* scene);
 		void renderObjects(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount);
+		void renderObjectsPrepass(vk::CommandBuffer commandBuffer, std::string objectType, uint32_t& startInstance, uint32_t instanceCount);
 		void drawStandard(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
+		void drawPrepass(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
+		void drawDeferred(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 		void drawSky(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 };

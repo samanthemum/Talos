@@ -96,7 +96,7 @@ namespace vkInit {
 
 		// check preferred format
 		for (vk::SurfaceFormatKHR format : formats) {
-			if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
+			if (format.format == vk::Format::eR8G8B8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
 				return format;
 			}
 		}
